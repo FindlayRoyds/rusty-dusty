@@ -1,76 +1,72 @@
-use lazy_static::lazy_static;
-use std::sync::Mutex;
 use wasm_bindgen::prelude::*;
+use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 
 #[wasm_bindgen]
-pub fn greet(name: &str) -> String {
-    format!("Hello, {}", name)
+pub struct Grid {
+    width: usize,
+    height: usize,
+    grid: Vec<bool>,
+}
+
+struct Position {
+    x: usize,
+    y: usize,
 }
 
 #[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
-}
-
-#[wasm_bindgen]
-pub fn add(a: i32, b: i32) -> i32 {
-    log(&format!("adding {} and {}", a, b));
-    return a + b;
-}
-
-#[wasm_bindgen]
-pub struct Person {
-    name: String,
-    age: u32,
-}
-
-#[wasm_bindgen]
-impl Person {
+impl Grid {
     #[wasm_bindgen(constructor)]
-    pub fn new(name: String, age: u32) -> Person {
-        Person { name, age }
+    pub fn new(width: usize, height: usize) -> Grid {
+        Grid {
+            width,
+            height,
+            grid: vec![false; width * height],
+        }
     }
 
-    #[wasm_bindgen(getter)]
-    pub fn name(&self) -> String {
-        self.name.clone()
+    fn all_positions(&self) -> Vec<Position> {
+        let mut positions = Vec::new();
+        for y in 0..self.height {
+            for x in 0..self.width {
+                positions.push(Position { x: x, y: y });
+            }
+        }
+        return positions;
     }
 
-    #[wasm_bindgen(getter)]
-    pub fn age(&self) -> u32 {
-        self.age
+    fn get_cell(&self, x: usize, y: usize) -> bool {
+        let index = y * self.width + x;
+        self.grid[index]
     }
-}
 
-#[wasm_bindgen]
-pub fn get_people() -> Vec<Person> {
-    vec![
-        Person::new("Alice".to_string(), 32),
-        Person::new("Bob".to_string(), 117),
-    ]
-}
+    fn set_cell(&self, position: Position, value: bool) {
+        let index = position.y + self.width * position.x;
+        self.grid[index] = value;
+    }
 
-const WASM_MEMORY_BUFFER_SIZE: usize = 2;
-lazy_static! {
-    static ref WASM_MEMORY_BUFFER: Mutex<[u8; WASM_MEMORY_BUFFER_SIZE]> =
-        Mutex::new([0; WASM_MEMORY_BUFFER_SIZE]);
-}
+    #[wasm_bindgen]
+    pub fn update(&self) {
+        for position in self.all_positions() {
+            self.set_cell(x, y, value);
+        }
+    }
 
-#[wasm_bindgen]
-pub fn store_value_at_idx_zero(value: u8) {
-    let mut buffer = WASM_MEMORY_BUFFER.lock().unwrap();
-    buffer[0] = value;
-}
+    #[wasm_bindgen]
+    pub fn draw_on_canvas(&self, canvas: HtmlCanvasElement) -> Result<(), JsValue> {
+        let context = canvas
+            .get_context("2d")?
+            .ok_or("Failed to get canvas context")?
+            .dyn_into::<CanvasRenderingContext2d>()?;
 
-#[wasm_bindgen]
-pub fn get_wasm_memory_buffer_pointer() -> *const u8 {
-    let buffer = WASM_MEMORY_BUFFER.lock().unwrap();
-    return buffer.as_ptr();
-}
+        for position in self.all_positions() {
+            context.set_fill_style_str(if self.get_cell(position.x, position.y) {
+                "blue"
+            } else {
+                "red"
+            });
+            context.fill_rect((position.x * 5) as f64, (position.y * 5) as f64, 5.0, 5.0);
+        }
 
-#[wasm_bindgen]
-pub fn read_wasm_memory_buffer_at_idx_one() -> u8 {
-    let buffer = WASM_MEMORY_BUFFER.lock().unwrap();
-    buffer[1]
+        Ok(())
+    }
 }
