@@ -1,6 +1,9 @@
+use nalgebra::Vector2;
 use rand::{Rng, rngs::OsRng};
 use wasm_bindgen::prelude::*;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
+
+type Position = Vector2<i32>;
 
 #[wasm_bindgen]
 pub struct Grid {
@@ -9,11 +12,6 @@ pub struct Grid {
     grid: Vec<Vec<bool>>,
     grid_update: Vec<Vec<bool>>,
     rng: OsRng,
-}
-
-struct Position {
-    x: i32,
-    y: i32,
 }
 
 #[wasm_bindgen]
@@ -33,7 +31,7 @@ impl Grid {
         let mut positions = Vec::new();
         for y in 0..self.height {
             for x in 0..self.width {
-                positions.push(Position { x: x, y: y });
+                positions.push(Position::new(x, y));
             }
         }
         return positions;
@@ -67,13 +65,7 @@ impl Grid {
     pub fn click_at(&mut self, x: i32, y: i32) {
         for y_offset in -1..=1 {
             for x_offset in -1..=1 {
-                self.set_cell(
-                    &Position {
-                        x: x_offset + x,
-                        y: y_offset + y,
-                    },
-                    true,
-                );
+                self.set_cell(&Position::new(x_offset + x, y_offset + y), true);
             }
         }
         self.push_update();
@@ -100,10 +92,7 @@ impl Grid {
                         continue;
                     }
                     let value = self
-                        .get_cell(&Position {
-                            x: position.x + x,
-                            y: position.y + y,
-                        })
+                        .get_cell(&Position::new(position.x + x, position.y + y))
                         .unwrap_or(false);
                     total += if value { 1 } else { 0 }
                 }
