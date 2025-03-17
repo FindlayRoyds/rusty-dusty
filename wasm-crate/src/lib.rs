@@ -1,7 +1,8 @@
 use nalgebra::Vector2;
 use rand::{Rng, rngs::OsRng};
+use wasm_bindgen::Clamped;
 use wasm_bindgen::prelude::*;
-use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
+use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, ImageData};
 
 type Position = Vector2<i32>;
 
@@ -11,7 +12,7 @@ pub struct Grid {
     height: i32,
     grid: Vec<Vec<bool>>,
     grid_update: Vec<Vec<bool>>,
-    rng: OsRng,
+    // rng: OsRng,
 }
 
 #[wasm_bindgen]
@@ -23,7 +24,7 @@ impl Grid {
             height,
             grid: vec![vec![false; width as usize]; height as usize],
             grid_update: vec![vec![false; width as usize]; height as usize],
-            rng: OsRng,
+            // rng: OsRng,
         }
     }
 
@@ -74,7 +75,7 @@ impl Grid {
     #[wasm_bindgen]
     pub fn initialise(&mut self) {
         for position in self.all_positions() {
-            let value = self.rng.gen_range(0..=1) == 1;
+            // let value = self.rng.gen_range(0..=1) == 1;
             self.set_cell(&position, false);
         }
         self.push_update();
@@ -107,34 +108,62 @@ impl Grid {
         self.push_update();
     }
 
+    // #[wasm_bindgen]
+    // pub fn draw(&self, canvas: HtmlCanvasElement, pixel_size: f64) -> Result<(), JsValue> {
+    //     let context = canvas
+    //         .get_context("2d")?
+    //         .ok_or("Failed to get canvas context")?
+    //         .dyn_into::<CanvasRenderingContext2d>()?;
+
+    //     context.clear_rect(
+    //         0.0,
+    //         0.0,
+    //         pixel_size * self.width as f64,
+    //         pixel_size * self.height as f64,
+    //     );
+
+    //     for position in self.all_positions() {
+    //         context.set_fill_style_str(if self.get_cell(&position).unwrap_or(false) {
+    //             "black"
+    //         } else {
+    //             "white"
+    //         });
+    //         context.fill_rect(
+    //             position.x as f64 * pixel_size,
+    //             position.y as f64 * pixel_size,
+    //             pixel_size,
+    //             pixel_size,
+    //         );
+    //     }
+
+    //     Ok(())
+    // }
+
     #[wasm_bindgen]
-    pub fn draw(&self, canvas: HtmlCanvasElement, pixel_size: f64) -> Result<(), JsValue> {
+    pub fn draw(&self, canvas: HtmlCanvasElement) -> Result<(), JsValue> {
         let context = canvas
             .get_context("2d")?
             .ok_or("Failed to get canvas context")?
             .dyn_into::<CanvasRenderingContext2d>()?;
 
-        context.clear_rect(
-            0.0,
-            0.0,
-            pixel_size * self.width as f64,
-            pixel_size * self.height as f64,
-        );
+        let width = self.width as u32;
+        let height = self.height as u32;
+
+        let mut buffer = vec![255; (width * height * 4) as usize];
 
         for position in self.all_positions() {
-            context.set_fill_style_str(if self.get_cell(&position).unwrap_or(false) {
-                "black"
-            } else {
-                "white"
-            });
-            context.fill_rect(
-                position.x as f64 * pixel_size,
-                position.y as f64 * pixel_size,
-                pixel_size,
-                pixel_size,
-            );
+            let is_black = self.get_cell(&position).unwrap_or(false);
+            let color = if is_black { 0 } else { 255 };
+
+            let pixel_index = (((position.y * self.width) + position.x) * 4) as usize;
+            buffer[pixel_index] = color;
+            buffer[pixel_index + 1] = color;
+            buffer[pixel_index + 2] = color;
+            buffer[pixel_index + 3] = 255;
         }
 
-        Ok(())
+        let image_data =
+            ImageData::new_with_u8_clamped_array_and_sh(Clamped(&mut buffer), width, height)?;
+        context.put_image_data(&image_data, 0.0, 0.0)
     }
 }
