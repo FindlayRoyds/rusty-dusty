@@ -1,7 +1,7 @@
 import init, { Grid } from "../public/wasm/wasm_crate.js";
 
-const NUM_CELLS_X = 1000;
-const NUM_CELLS_Y = 1000;
+const NUM_CELLS_X = 700;
+const NUM_CELLS_Y = 700;
 
 function testPerformance(name: string, fn: () => void) {
   const start = performance.now();
@@ -75,18 +75,18 @@ async function runWasm() {
   const grid = new Grid(NUM_CELLS_X, NUM_CELLS_Y);
   testPerformance("initialising", () => grid.initialise());
 
-  let pixelSize = resizeCanvas(canvas);
+  let pixelSize = Math.floor(resizeCanvas(canvas));
 
   window.addEventListener("resize", () => {
-    pixelSize = resizeCanvas(canvas);
+    pixelSize = Math.floor(resizeCanvas(canvas));
   });
 
   addClickListener(canvas, grid, pixelSize);
 
   setInterval(() => {
     testPerformance("updating", () => grid.update());
-    testPerformance("drawing", () => grid.draw(canvas));
-  }, 100);
+    testPerformance("drawing", () => grid.draw(canvas, pixelSize));
+  }, 0);
 }
 
 runWasm();

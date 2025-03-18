@@ -1,5 +1,5 @@
 use nalgebra::Vector2;
-use rand::{Rng, rngs::OsRng};
+// use rand::{Rng, rngs::OsRng};
 use wasm_bindgen::Clamped;
 use wasm_bindgen::prelude::*;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, ImageData};
@@ -108,39 +108,8 @@ impl Grid {
         self.push_update();
     }
 
-    // #[wasm_bindgen]
-    // pub fn draw(&self, canvas: HtmlCanvasElement, pixel_size: f64) -> Result<(), JsValue> {
-    //     let context = canvas
-    //         .get_context("2d")?
-    //         .ok_or("Failed to get canvas context")?
-    //         .dyn_into::<CanvasRenderingContext2d>()?;
-
-    //     context.clear_rect(
-    //         0.0,
-    //         0.0,
-    //         pixel_size * self.width as f64,
-    //         pixel_size * self.height as f64,
-    //     );
-
-    //     for position in self.all_positions() {
-    //         context.set_fill_style_str(if self.get_cell(&position).unwrap_or(false) {
-    //             "black"
-    //         } else {
-    //             "white"
-    //         });
-    //         context.fill_rect(
-    //             position.x as f64 * pixel_size,
-    //             position.y as f64 * pixel_size,
-    //             pixel_size,
-    //             pixel_size,
-    //         );
-    //     }
-
-    //     Ok(())
-    // }
-
     #[wasm_bindgen]
-    pub fn draw(&self, canvas: HtmlCanvasElement) -> Result<(), JsValue> {
+    pub fn draw(&self, canvas: HtmlCanvasElement, pixel_size: u32) -> Result<(), JsValue> {
         let context = canvas
             .get_context("2d")?
             .ok_or("Failed to get canvas context")?
@@ -149,21 +118,32 @@ impl Grid {
         let width = self.width as u32;
         let height = self.height as u32;
 
-        let mut buffer = vec![255; (width * height * 4) as usize];
+        let mut data = vec![255; (width * height * pixel_size * pixel_size * 4) as usize];
 
         for position in self.all_positions() {
-            let is_black = self.get_cell(&position).unwrap_or(false);
-            let color = if is_black { 0 } else { 255 };
+            if self.get_cell(&position).unwrap_or(false) {
+                let x_start = position.x as u32 * pixel_size;
+                let y_start = position.y as u32 * pixel_size;
 
-            let pixel_index = (((position.y * self.width) + position.x) * 4) as usize;
-            buffer[pixel_index] = color;
-            buffer[pixel_index + 1] = color;
-            buffer[pixel_index + 2] = color;
-            buffer[pixel_index + 3] = 255;
+                for y in 0..pixel_size {
+                    for x in 0..pixel_size {
+                        let index = ((y_start + y) * width * pixel_size + (x_start + x)) * 4;
+                        data[index as usize] = 0; // R
+                        data[index as usize + 1] = 0; // G
+                        data[index as usize + 2] = 0; // B
+                        data[index as usize + 3] = 255; // A
+                    }
+                }
+            }
         }
 
-        let image_data =
-            ImageData::new_with_u8_clamped_array_and_sh(Clamped(&mut buffer), width, height)?;
-        context.put_image_data(&image_data, 0.0, 0.0)
+        let image_data = ImageData::new_with_u8_clamped_array_and_sh(
+            Clamped(&mut data),
+            width * pixel_size,
+            height * pixel_size,
+        )?;
+        context.put_image_data(&image_data, 0.0, 0.0)?;
+
+        Ok(())
     }
 }
