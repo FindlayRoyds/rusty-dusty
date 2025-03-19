@@ -18,11 +18,12 @@ web-sys = { version = "0.3", features = [
     "ImageData",
 ] }
 
-rand = { version = "0.8", default-features = false, features = [
-    "std",
-    "getrandom",
-] }
-getrandom = { version = "0.2", features = ["js"] }
+# rand = { version = "0.8", default-features = false, features = [
+#     "std",
+#     "getrandom",
+# ] }
+# getrandom = { version = "0.2", features = ["js"] }
+fastrand = "2.3"
 
 # nalgebra = "0.29"
 vector2d = "3.1"

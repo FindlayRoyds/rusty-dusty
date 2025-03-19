@@ -1,5 +1,5 @@
 use crate::Grid;
-// use nalgebra::{Vector2, Vector3};
+use fastrand;
 use vector2d::Vector2D;
 
 // pub type Color = Vector3<u8>;
@@ -82,21 +82,22 @@ impl Kind {
 }
 
 fn update_sand(_: &Cell, position: &Position, grid: &mut Grid) {
-    let below_position = position - &Position::new(0, 1);
-    if grid.is_type(&below_position, Kind::Air) {
-        grid.swap_cells(position, &below_position);
-        return;
+    if fastrand::u8(0..15) > 0 {
+        let below_position = position - &Position::new(0, 1);
+        if grid.is_type(&below_position, Kind::Air) {
+            grid.swap_cells(position, &below_position);
+            return;
+        }
     }
 
-    for direction in &[-1, 1] {
-        let random_direction = direction * if position.y % 2 == 0 { -1 } else { 1 };
-        let below_position = position + &Position::new(direction * random_direction, -1);
-        if !grid.is_type(&below_position, Kind::Air) {
-            continue;
+    let directions = if fastrand::bool() { [-1, 1] } else { [1, -1] };
+    for &direction in &directions {
+        let side_position = position + &Position::new(direction, 0);
+        let below_position = position + &Position::new(direction, -1);
+        if grid.is_type(&below_position, Kind::Air) && grid.is_type(&side_position, Kind::Air) {
+            grid.swap_cells(position, &side_position);
+            return;
         }
-
-        grid.swap_cells(position, &below_position);
-        return;
     }
 }
 

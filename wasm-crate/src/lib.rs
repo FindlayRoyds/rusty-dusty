@@ -1,5 +1,3 @@
-// use nalgebra::Vector2;
-// use rand::{Rng, rngs::OsRng};
 use wasm_bindgen::Clamped;
 use wasm_bindgen::prelude::*;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, ImageData};
