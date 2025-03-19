@@ -72,9 +72,15 @@ impl Grid {
                 if offset.length_squared() > radius * radius {
                     continue;
                 }
+
+                let base_color = 45.0;
+                let color_range = 7.0;
+                let color = ((tick as f64 / 15.0).rem_euclid(color_range * 2.0) - color_range)
+                    .abs()
+                    + base_color;
                 self.set_cell(
                     &Position::new(x_offset + x, y_offset + (self.height - y - 1)),
-                    Cell::new_with_color(Kind::Sand, Color::new((tick & 255) as u8, 255, 255)),
+                    Cell::new_with_color(Kind::Sand, Color::from_hsl(42.0, 50.0, color)),
                 );
             }
         }

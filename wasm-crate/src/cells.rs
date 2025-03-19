@@ -14,6 +14,25 @@ impl Color {
     pub fn new(r: u8, g: u8, b: u8) -> Self {
         Self { r, g, b }
     }
+
+    pub fn from_hsl(h: f64, s: f64, l: f64) -> Self {
+        // Found on the internet
+        let h = h as f32 / 360.0;
+        let s = s as f32 / 100.0;
+        let l = l as f32 / 100.0;
+
+        let a = s * l.min(1.0 - l);
+        let f = |n: f32| {
+            let k = (n + h * 12.0) % 12.0;
+            l - a * (k - 3.0).min(9.0 - k).max(-1.0)
+        };
+
+        let r = (f(0.0) * 255.0).round() as u8;
+        let g = (f(8.0) * 255.0).round() as u8;
+        let b = (f(4.0) * 255.0).round() as u8;
+
+        Self { r, g, b }
+    }
 }
 
 // pub type Position = Vector2<i32>;

@@ -55,7 +55,7 @@ function addClickListener(
       lastX = cellX;
       lastY = cellY;
 
-      grid.click_at(cellX, cellY, config.brushRadius, 100);
+      grid.click_at(cellX, cellY, config.brushRadius, Date.now());
       // grid.draw(canvas, pixelSize);
     }
   };
