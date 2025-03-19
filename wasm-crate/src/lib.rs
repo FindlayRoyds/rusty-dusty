@@ -27,23 +27,23 @@ impl Grid {
         }
     }
 
-    fn all_positions(&self) -> Vec<Position> {
+    fn all_positions(&self) -> Vec<Vector> {
         // Could probably be simplified but I'm not good enough at rust yet
         let mut positions = Vec::new();
         for y in 0..self.height {
             for x in 0..self.width {
-                positions.push(Position::new(x, y));
+                positions.push(Vector::new(x, y));
             }
         }
         return positions;
     }
 
-    fn is_in_bounds(&self, position: &Position) -> bool {
+    fn is_in_bounds(&self, position: &Vector) -> bool {
         // I could do (0..self.width).contains..., but I'm not sure it'll get optimised
         position.x >= 0 && position.y >= 0 && position.x < self.width && position.y < self.height
     }
 
-    fn get_cell(&self, position: &Position) -> Cell {
+    fn get_cell(&self, position: &Vector) -> Cell {
         if !self.is_in_bounds(position) {
             return Cell::new(Kind::Wall);
         }
@@ -52,7 +52,7 @@ impl Grid {
         self.grid[y as usize][x as usize].clone()
     }
 
-    fn set_cell(&mut self, position: &Position, value: Cell) {
+    fn set_cell(&mut self, position: &Vector, value: Cell) {
         if !self.is_in_bounds(position) {
             return;
         }
@@ -61,7 +61,7 @@ impl Grid {
         self.grid_update[y as usize][x as usize] = value;
     }
 
-    fn swap_cells(&mut self, position1: &Position, position2: &Position) {
+    fn swap_cells(&mut self, position1: &Vector, position2: &Vector) {
         if !self.is_in_bounds(position1) || !self.is_in_bounds(position2) {
             return;
         }
@@ -71,7 +71,7 @@ impl Grid {
         self.set_cell(position2, cell1);
     }
 
-    fn is_type(&self, position: &Position, kind: Kind) -> bool {
+    fn is_type(&self, position: &Vector, kind: Kind) -> bool {
         self.get_cell(position).kind == kind
     }
 
@@ -101,11 +101,11 @@ impl Grid {
     pub fn click_at(&mut self, x: i32, y: i32, radius: i32, time: i32) {
         for y_offset in -radius..=radius {
             for x_offset in -radius..=radius {
-                let offset = Position::new(x_offset, y_offset);
+                let offset = Vector::new(x_offset, y_offset);
                 if offset.length_squared() > radius * radius {
                     continue;
                 }
-                let position = Position::new(x_offset + x, y_offset + (self.height - y - 1));
+                let position = Vector::new(x_offset + x, y_offset + (self.height - y - 1));
                 if !self.is_type(&position, Kind::Air) {
                     continue;
                 }
