@@ -90,14 +90,12 @@ fn update_sand(_: &Cell, position: &Vector, grid: &mut Grid) {
         }
     }
 
-    let directions = if fastrand::bool() { [-1, 1] } else { [1, -1] };
-    for &direction in &directions {
-        let side_position = position + &Vector::new(direction, 0);
-        let below_position = position + &Vector::new(direction, -1);
-        if grid.is_type(&below_position, Kind::Air) && grid.is_type(&side_position, Kind::Air) {
-            grid.swap_cells(position, &side_position);
-            return;
-        }
+    let direction = if fastrand::bool() { -1 } else { 1 };
+    let side_position = position + &Vector::new(direction, 0);
+    let below_position = position + &Vector::new(direction, -1);
+    if grid.is_type(&below_position, Kind::Air) && grid.is_type(&side_position, Kind::Air) {
+        grid.swap_cells(position, &side_position);
+        return;
     }
 }
 
