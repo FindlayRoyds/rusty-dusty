@@ -1,4 +1,4 @@
-use crate::Grid;
+use crate::Game;
 use fastrand;
 use vector2d::Vector2D;
 
@@ -73,7 +73,7 @@ impl Kind {
         }
     }
 
-    pub fn update(&self, cell: &Cell, position: &Vector, grid: &mut Grid) {
+    pub fn update(&self, cell: &Cell, position: &Vector, grid: &mut Game) {
         match self {
             Kind::Sand => update_sand(cell, position, grid),
             _ => {}
@@ -81,9 +81,9 @@ impl Kind {
     }
 }
 
-fn update_sand(_: &Cell, position: &Vector, grid: &mut Grid) {
+fn update_sand(_: &Cell, position: &Vector, grid: &mut Game) {
     if fastrand::u8(0..15) > 0 {
-        let below_position = position - &Vector::new(0, 1);
+        let below_position = position + &Vector::new(0, -1);
         if grid.is_type(&below_position, Kind::Air) {
             grid.swap_cells(position, &below_position);
             return;

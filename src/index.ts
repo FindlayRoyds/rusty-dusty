@@ -1,7 +1,7 @@
-import init, { Grid } from "../public/wasm/wasm_crate.js";
+import init, { Game } from "../public/wasm/wasm_crate.js";
 import bresenham from "bresenham";
 
-const NUM_CELLS_X = 250;
+const NUM_CELLS_X = 500;
 const NUM_CELLS_Y = 250;
 const LOGGING = false;
 interface Config {
@@ -34,7 +34,7 @@ function resizeCanvas(canvas: HTMLCanvasElement) {
 
 function addClickListener(
   canvas: HTMLCanvasElement,
-  grid: Grid,
+  grid: Game,
   pixelSizeRef: { value: number },
   config: Config
 ) {
@@ -98,7 +98,7 @@ async function runWasm(config: Config) {
   await init();
 
   const canvas = document.getElementById("display_canvas") as HTMLCanvasElement;
-  const grid = new Grid(NUM_CELLS_X, NUM_CELLS_Y);
+  const grid = new Game(NUM_CELLS_X, NUM_CELLS_Y);
   testPerformance("initialising", () => grid.initialise());
 
   let pixelSizeRef = { value: Math.floor(resizeCanvas(canvas)) };

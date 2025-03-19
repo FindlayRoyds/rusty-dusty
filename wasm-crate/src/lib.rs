@@ -6,32 +6,33 @@ mod cells;
 use cells::*;
 
 #[wasm_bindgen]
-pub struct Grid {
-    width: i32,
-    height: i32,
+pub struct Game {
+    grid_width: i32,
+    grid_height: i32,
     grid: Vec<Vec<Cell>>,
     grid_update: Vec<Vec<Cell>>,
-    // rng: OsRng,
 }
 
 #[wasm_bindgen]
-impl Grid {
+impl Game {
     #[wasm_bindgen(constructor)]
-    pub fn new(width: i32, height: i32) -> Grid {
-        Grid {
-            width,
-            height,
-            grid: vec![vec![Cell::new(Kind::Air); width as usize]; height as usize],
-            grid_update: vec![vec![Cell::new(Kind::Air); width as usize]; height as usize],
-            // rng: OsRng,
+    pub fn new(grid_width: i32, grid_height: i32) -> Game {
+        Game {
+            grid_width,
+            grid_height,
+            grid: vec![vec![Cell::new(Kind::Air); grid_width as usize]; grid_height as usize],
+            grid_update: vec![
+                vec![Cell::new(Kind::Air); grid_width as usize];
+                grid_height as usize
+            ],
         }
     }
 
     fn all_positions(&self) -> Vec<Vector> {
         // Could probably be simplified but I'm not good enough at rust yet
         let mut positions = Vec::new();
-        for y in 0..self.height {
-            for x in 0..self.width {
+        for y in 0..self.grid_height {
+            for x in 0..self.grid_width {
                 positions.push(Vector::new(x, y));
             }
         }
@@ -40,15 +41,18 @@ impl Grid {
 
     fn is_in_bounds(&self, position: &Vector) -> bool {
         // I could do (0..self.width).contains..., but I'm not sure it'll get optimised
-        position.x >= 0 && position.y >= 0 && position.x < self.width && position.y < self.height
+        position.x >= 0
+            && position.y >= 0
+            && position.x < self.grid_width
+            && position.y < self.grid_height
     }
 
     fn get_cell(&self, position: &Vector) -> Cell {
         if !self.is_in_bounds(position) {
             return Cell::new(Kind::Wall);
         }
-        let x = (position.x + self.width) % self.width;
-        let y = (position.y + self.height) % self.height;
+        let x = (position.x + self.grid_width) % self.grid_width;
+        let y = (position.y + self.grid_height) % self.grid_height;
         self.grid[y as usize][x as usize].clone()
     }
 
@@ -56,8 +60,8 @@ impl Grid {
         if !self.is_in_bounds(position) {
             return;
         }
-        let x = (position.x + self.width) % self.width;
-        let y = (position.y + self.height) % self.height;
+        let x = (position.x + self.grid_width) % self.grid_width;
+        let y = (position.y + self.grid_height) % self.grid_height;
         self.grid_update[y as usize][x as usize] = value;
     }
 
@@ -105,7 +109,7 @@ impl Grid {
                 if offset.length_squared() > radius * radius {
                     continue;
                 }
-                let position = Vector::new(x_offset + x, y_offset + (self.height - y - 1));
+                let position = Vector::new(x_offset + x, y_offset + (self.grid_height - y - 1));
                 if !self.is_type(&position, Kind::Air) {
                     continue;
                 }
@@ -124,8 +128,8 @@ impl Grid {
             .ok_or("Failed to get canvas context :(")?
             .dyn_into::<CanvasRenderingContext2d>()?;
 
-        let width = self.width as u32;
-        let height = self.height as u32;
+        let width = self.grid_width as u32;
+        let height = self.grid_height as u32;
 
         let mut data = vec![255; (width * height * pixel_size * pixel_size * 4) as usize];
 
@@ -133,7 +137,7 @@ impl Grid {
             let cell = self.get_cell(&position);
             if cell.kind == Kind::Sand {
                 let x_start = position.x as u32 * pixel_size;
-                let y_start = (self.height - position.y - 1) as u32 * pixel_size;
+                let y_start = (self.grid_height - position.y - 1) as u32 * pixel_size;
 
                 for y in 0..pixel_size {
                     for x in 0..pixel_size {
