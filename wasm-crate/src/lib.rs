@@ -40,9 +40,13 @@ impl Grid {
         return positions;
     }
 
+    fn is_in_bounds(&self, position: &Position) -> bool {
+        // I could do (0..self.width).contains..., but I'm not sure it'll get optimised
+        position.x >= 0 && position.y >= 0 && position.x < self.width && position.y < self.height
+    }
+
     fn get_cell(&self, position: &Position) -> Cell {
-        if position.x < 0 || position.y < 0 || position.x >= self.width || position.y >= self.height
-        {
+        if !self.is_in_bounds(position) {
             return Cell::new(Kind::Wall);
         }
         let x = (position.x + self.width) % self.width;
@@ -51,8 +55,7 @@ impl Grid {
     }
 
     fn set_cell(&mut self, position: &Position, value: Cell) {
-        if position.x < 0 || position.y < 0 || position.x >= self.width || position.y >= self.height
-        {
+        if !self.is_in_bounds(position) {
             return;
         }
         let x = (position.x + self.width) % self.width;
@@ -60,35 +63,22 @@ impl Grid {
         self.grid_update[y as usize][x as usize] = value;
     }
 
-    fn push_update(&mut self) {
-        self.grid = self.grid_update.clone();
+    fn swap_cells(&mut self, position1: &Position, position2: &Position) {
+        if !self.is_in_bounds(position1) || !self.is_in_bounds(position2) {
+            return;
+        }
+        let cell1 = self.get_cell(position1);
+        let cell2 = self.get_cell(position2);
+        self.set_cell(position1, cell2);
+        self.set_cell(position2, cell1);
     }
 
-    #[wasm_bindgen]
-    pub fn click_at(&mut self, x: i32, y: i32, radius: i32, tick: i32) {
-        for y_offset in -radius..=radius {
-            for x_offset in -radius..=radius {
-                let offset = Position::new(x_offset, y_offset);
-                if offset.length_squared() > radius * radius {
-                    continue;
-                }
+    fn is_type(&self, position: &Position, kind: Kind) -> bool {
+        self.get_cell(position).kind == kind
+    }
 
-                let base_color = 45.0;
-                let color_range = 7.0;
-                let color = ((tick as f64 / 15.0).rem_euclid(color_range * 2.0) - color_range)
-                    .abs()
-                    + base_color;
-                self.set_cell(
-                    &Position::new(x_offset + x, y_offset + (self.height - y - 1)),
-                    Cell::new_with_color(Kind::Sand, Color::from_hsl(42.0, 50.0, color)),
-                );
-            }
-        }
-        // self.set_cell(
-        //     &Position::new(x, self.height - y - 1),
-        //     Cell::new(cellKind::Sand),
-        // );
-        self.push_update();
+    fn push_update(&mut self) {
+        self.grid = self.grid_update.clone();
     }
 
     #[wasm_bindgen]
@@ -106,6 +96,32 @@ impl Grid {
             let cell = self.get_cell(&position);
             cell.kind.update(&cell, &position, self);
         }
+        self.push_update();
+    }
+
+    #[wasm_bindgen]
+    pub fn click_at(&mut self, x: i32, y: i32, radius: i32, tick: i32) {
+        for y_offset in -radius..=radius {
+            for x_offset in -radius..=radius {
+                let offset = Position::new(x_offset, y_offset);
+                if offset.length_squared() > radius * radius {
+                    continue;
+                }
+                let position = Position::new(x_offset + x, y_offset + (self.height - y - 1));
+                if !self.is_type(&position, Kind::Air) {
+                    continue;
+                }
+
+                let base_color = 45.0;
+                let color_range = 7.0;
+                let lightness = ((tick as f64 / 15.0).rem_euclid(color_range * 2.0) - color_range)
+                    .abs()
+                    + base_color;
+                let color = Color::from_hsl(42.0, 50.0, lightness);
+                self.set_cell(&position, Cell::new_with_color(Kind::Sand, color));
+            }
+        }
+
         self.push_update();
     }
 

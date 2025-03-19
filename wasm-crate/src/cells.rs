@@ -75,35 +75,21 @@ impl Kind {
     }
 }
 
-fn update_sand(cell: &Cell, position: &Position, grid: &mut Grid) {
+fn update_sand(_: &Cell, position: &Position, grid: &mut Grid) {
     let below_position = position - &Position::new(0, 1);
-    if grid.get_cell(&below_position).kind == Kind::Air {
-        grid.set_cell(
-            &below_position,
-            Cell::new_with_color(Kind::Sand, cell.color.clone()),
-        );
-        grid.set_cell(
-            &position,
-            Cell::new_with_color(Kind::Air, cell.color.clone()),
-        );
+    if grid.is_type(&below_position, Kind::Air) {
+        grid.swap_cells(position, &below_position);
         return;
     }
 
     for direction in &[-1, 1] {
         let random_direction = direction * if position.y % 2 == 0 { -1 } else { 1 };
         let below_position = position + &Position::new(direction * random_direction, -1);
-        if grid.get_cell(&below_position).kind != Kind::Air {
+        if !grid.is_type(&below_position, Kind::Air) {
             continue;
         }
 
-        grid.set_cell(
-            &below_position,
-            Cell::new_with_color(Kind::Sand, cell.color.clone()),
-        );
-        grid.set_cell(
-            &position,
-            Cell::new_with_color(Kind::Air, cell.color.clone()),
-        );
+        grid.swap_cells(position, &below_position);
         return;
     }
 }
