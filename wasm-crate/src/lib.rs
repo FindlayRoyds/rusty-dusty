@@ -101,7 +101,7 @@ impl Grid {
     }
 
     #[wasm_bindgen]
-    pub fn update(&mut self, tick: i32) {
+    pub fn update(&mut self) {
         for position in self.all_positions() {
             let cell = self.get_cell(&position);
             cell.kind.update(&cell, &position, self);

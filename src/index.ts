@@ -110,12 +110,10 @@ async function runWasm(config: Config) {
 
   addClickListener(canvas, grid, pixelSizeRef, config);
 
-  let tick = 0;
   setInterval(
     () => {
-      testPerformance("updating", () => grid.update(tick));
+      testPerformance("updating", () => grid.update());
       testPerformance("drawing", () => grid.draw(canvas, pixelSizeRef.value));
-      tick += 1;
     },
     config.goalFPS == -1 ? 0 : 1000 / config.goalFPS
   );
