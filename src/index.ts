@@ -1,4 +1,5 @@
 import init, { Grid } from "../public/wasm/wasm_crate.js";
+import bresenham from "bresenham";
 
 const NUM_CELLS_X = 250;
 const NUM_CELLS_Y = 250;
@@ -40,6 +41,7 @@ function addClickListener(
   let isDragging = false;
   let lastX: number | null = null;
   let lastY: number | null = null;
+  let lastTime = Date.now();
 
   const handleMouseMove = (event: MouseEvent) => {
     if (isDragging) {
@@ -52,11 +54,26 @@ function addClickListener(
       if (cellX == lastX && cellY == lastY) {
         return;
       }
+
+      if (lastX !== null && lastY !== null) {
+        const points = bresenham(lastX, lastY, cellX, cellY);
+        points.shift();
+        const timeStep = (Date.now() - lastTime) / points.length;
+        points.forEach((point, index) => {
+          grid.click_at(
+            point.x,
+            point.y,
+            config.brushRadius,
+            lastTime + index * timeStep
+          );
+        });
+      } else {
+        grid.click_at(cellX, cellY, config.brushRadius, Date.now());
+      }
+
       lastX = cellX;
       lastY = cellY;
-
-      grid.click_at(cellX, cellY, config.brushRadius, Date.now());
-      // grid.draw(canvas, pixelSize);
+      lastTime = Date.now();
     }
   };
 

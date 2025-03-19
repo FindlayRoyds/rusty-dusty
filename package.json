@@ -9,8 +9,12 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@types/bresenham": "^0.0.3",
     "prettier": "^3.5.3",
     "typescript": "~5.7.2",
     "vite": "^6.2.0"
+  },
+  "dependencies": {
+    "bresenham": "^0.0.4"
   }
 }
