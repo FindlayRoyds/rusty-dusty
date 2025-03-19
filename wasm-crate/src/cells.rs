@@ -52,9 +52,9 @@ impl Cell {
         }
     }
 
-    pub fn new_with_color(kind: Kind, color: Color) -> Self {
-        Cell { kind, color }
-    }
+    // pub fn new_with_color(kind: Kind, color: Color) -> Self {
+    //     Cell { kind, color }
+    // }
 }
 
 // #[wasm_bindgen]
@@ -66,11 +66,17 @@ pub enum Kind {
 }
 
 impl Kind {
+    pub fn new(&self, time: i32) -> Cell {
+        match self {
+            Kind::Sand => create_sand(time),
+            _ => Cell::new(self.clone()),
+        }
+    }
+
     pub fn update(&self, cell: &Cell, position: &Position, grid: &mut Grid) {
         match self {
-            Kind::Air => {}
-            Kind::Wall => {}
             Kind::Sand => update_sand(cell, position, grid),
+            _ => {}
         }
     }
 }
@@ -92,4 +98,15 @@ fn update_sand(_: &Cell, position: &Position, grid: &mut Grid) {
         grid.swap_cells(position, &below_position);
         return;
     }
+}
+
+fn create_sand(time: i32) -> Cell {
+    let base_color = 45.0;
+    let color_range = 7.0;
+    let lightness =
+        ((time as f64 / 15.0).rem_euclid(color_range * 2.0) - color_range).abs() + base_color;
+    let color = Color::from_hsl(42.0, 50.0, lightness);
+    let mut cell = Cell::new(Kind::Sand);
+    cell.color = color;
+    return cell;
 }

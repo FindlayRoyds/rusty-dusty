@@ -100,7 +100,7 @@ impl Grid {
     }
 
     #[wasm_bindgen]
-    pub fn click_at(&mut self, x: i32, y: i32, radius: i32, tick: i32) {
+    pub fn click_at(&mut self, x: i32, y: i32, radius: i32, time: i32) {
         for y_offset in -radius..=radius {
             for x_offset in -radius..=radius {
                 let offset = Position::new(x_offset, y_offset);
@@ -112,13 +112,7 @@ impl Grid {
                     continue;
                 }
 
-                let base_color = 45.0;
-                let color_range = 7.0;
-                let lightness = ((tick as f64 / 15.0).rem_euclid(color_range * 2.0) - color_range)
-                    .abs()
-                    + base_color;
-                let color = Color::from_hsl(42.0, 50.0, lightness);
-                self.set_cell(&position, Cell::new_with_color(Kind::Sand, color));
+                self.set_cell(&position, Kind::Sand.new(time));
             }
         }
 
