@@ -10,12 +10,22 @@ crate-type = ["cdylib"]
 wasm-bindgen = "0.2"
 lazy_static = "1.4"
 
-web-sys = {version = "0.3", features = ["Document", "Window", "HtmlCanvasElement", "CanvasRenderingContext2d", "ImageData"]}
+web-sys = { version = "0.3", features = [
+    "Document",
+    "Window",
+    "HtmlCanvasElement",
+    "CanvasRenderingContext2d",
+    "ImageData",
+] }
 
-rand = { version = "0.8", default-features = false, features = ["std", "getrandom"] }
+rand = { version = "0.8", default-features = false, features = [
+    "std",
+    "getrandom",
+] }
 getrandom = { version = "0.2", features = ["js"] }
 
-nalgebra = "0.29"
+# nalgebra = "0.29"
+vector2d = "3.1"
 
 # wgpu stuff
 # winit = { version = "0.29", features = ["rwh_05"] }

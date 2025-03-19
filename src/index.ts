@@ -1,9 +1,18 @@
 import init, { Grid } from "../public/wasm/wasm_crate.js";
 
-const NUM_CELLS_X = 700;
-const NUM_CELLS_Y = 700;
+const NUM_CELLS_X = 250;
+const NUM_CELLS_Y = 250;
+const LOGGING = false;
+interface Config {
+  goalFPS: number; // essentially goal fps
+  brushRadius: number;
+}
 
 function testPerformance(name: string, fn: () => void) {
+  if (!LOGGING) {
+    fn();
+    return;
+  }
   const start = performance.now();
   fn();
   const end = performance.now();
@@ -25,7 +34,8 @@ function resizeCanvas(canvas: HTMLCanvasElement) {
 function addClickListener(
   canvas: HTMLCanvasElement,
   grid: Grid,
-  pixelSize: number
+  pixelSizeRef: { value: number },
+  config: Config
 ) {
   let isDragging = false;
   let lastX: number | null = null;
@@ -37,16 +47,15 @@ function addClickListener(
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
 
-      const cellX = Math.floor(x / pixelSize);
-      const cellY = Math.floor(y / pixelSize);
+      const cellX = Math.floor(x / pixelSizeRef.value);
+      const cellY = Math.floor(y / pixelSizeRef.value);
       if (cellX == lastX && cellY == lastY) {
         return;
       }
       lastX = cellX;
       lastY = cellY;
 
-      console.log("clicked");
-      grid.click_at(cellX, cellY);
+      grid.click_at(cellX, cellY, config.brushRadius, 100);
       // grid.draw(canvas, pixelSize);
     }
   };
@@ -68,25 +77,32 @@ function addClickListener(
   canvas.addEventListener("mouseleave", handleMouseUp);
 }
 
-async function runWasm() {
-  let rustWasm = await init();
+async function runWasm(config: Config) {
+  await init();
 
   const canvas = document.getElementById("display_canvas") as HTMLCanvasElement;
   const grid = new Grid(NUM_CELLS_X, NUM_CELLS_Y);
   testPerformance("initialising", () => grid.initialise());
 
-  let pixelSize = Math.floor(resizeCanvas(canvas));
+  let pixelSizeRef = { value: Math.floor(resizeCanvas(canvas)) };
 
   window.addEventListener("resize", () => {
-    pixelSize = Math.floor(resizeCanvas(canvas));
+    pixelSizeRef.value = Math.floor(resizeCanvas(canvas));
+    grid.draw(canvas, pixelSizeRef.value);
   });
 
-  addClickListener(canvas, grid, pixelSize);
+  addClickListener(canvas, grid, pixelSizeRef, config);
 
-  setInterval(() => {
-    testPerformance("updating", () => grid.update());
-    testPerformance("drawing", () => grid.draw(canvas, pixelSize));
-  }, 0);
+  let tick = 0;
+  setInterval(
+    () => {
+      testPerformance("updating", () => grid.update(tick));
+      testPerformance("drawing", () => grid.draw(canvas, pixelSizeRef.value));
+      tick += 1;
+    },
+    config.goalFPS == -1 ? 0 : 1000 / config.goalFPS
+  );
 }
 
-runWasm();
+let config: Config = { goalFPS: 60, brushRadius: 15 };
+runWasm(config);

@@ -1,17 +1,18 @@
-use nalgebra::Vector2;
+// use nalgebra::Vector2;
 // use rand::{Rng, rngs::OsRng};
 use wasm_bindgen::Clamped;
 use wasm_bindgen::prelude::*;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, ImageData};
 
-type Position = Vector2<i32>;
+mod cells;
+use cells::*;
 
 #[wasm_bindgen]
 pub struct Grid {
     width: i32,
     height: i32,
-    grid: Vec<Vec<bool>>,
-    grid_update: Vec<Vec<bool>>,
+    grid: Vec<Vec<Cell>>,
+    grid_update: Vec<Vec<Cell>>,
     // rng: OsRng,
 }
 
@@ -22,13 +23,14 @@ impl Grid {
         Grid {
             width,
             height,
-            grid: vec![vec![false; width as usize]; height as usize],
-            grid_update: vec![vec![false; width as usize]; height as usize],
+            grid: vec![vec![Cell::new(Kind::Air); width as usize]; height as usize],
+            grid_update: vec![vec![Cell::new(Kind::Air); width as usize]; height as usize],
             // rng: OsRng,
         }
     }
 
     fn all_positions(&self) -> Vec<Position> {
+        // Could probably be simplified but I'm not good enough at rust yet
         let mut positions = Vec::new();
         for y in 0..self.height {
             for x in 0..self.width {
@@ -38,21 +40,21 @@ impl Grid {
         return positions;
     }
 
-    fn get_cell(&self, position: &Position) -> Option<bool> {
-        // if position.x < 0 || position.y < 0 || position.x >= self.width || position.y >= self.height
-        // {
-        //     return None;
-        // }
+    fn get_cell(&self, position: &Position) -> Cell {
+        if position.x < 0 || position.y < 0 || position.x >= self.width || position.y >= self.height
+        {
+            return Cell::new(Kind::Wall);
+        }
         let x = (position.x + self.width) % self.width;
         let y = (position.y + self.height) % self.height;
-        Some(self.grid[y as usize][x as usize])
+        self.grid[y as usize][x as usize].clone()
     }
 
-    fn set_cell(&mut self, position: &Position, value: bool) {
-        // if position.x < 0 || position.y < 0 || position.x >= self.width || position.y >= self.height
-        // {
-        //     return;
-        // }
+    fn set_cell(&mut self, position: &Position, value: Cell) {
+        if position.x < 0 || position.y < 0 || position.x >= self.width || position.y >= self.height
+        {
+            return;
+        }
         let x = (position.x + self.width) % self.width;
         let y = (position.y + self.height) % self.height;
         self.grid_update[y as usize][x as usize] = value;
@@ -63,12 +65,23 @@ impl Grid {
     }
 
     #[wasm_bindgen]
-    pub fn click_at(&mut self, x: i32, y: i32) {
-        for y_offset in -1..=1 {
-            for x_offset in -1..=1 {
-                self.set_cell(&Position::new(x_offset + x, y_offset + y), true);
+    pub fn click_at(&mut self, x: i32, y: i32, radius: i32, tick: i32) {
+        for y_offset in -radius..=radius {
+            for x_offset in -radius..=radius {
+                let offset = Position::new(x_offset, y_offset);
+                if offset.length_squared() > radius * radius {
+                    continue;
+                }
+                self.set_cell(
+                    &Position::new(x_offset + x, y_offset + (self.height - y - 1)),
+                    Cell::new_with_color(Kind::Sand, Color::new((tick & 255) as u8, 255, 255)),
+                );
             }
         }
+        // self.set_cell(
+        //     &Position::new(x, self.height - y - 1),
+        //     Cell::new(cellKind::Sand),
+        // );
         self.push_update();
     }
 
@@ -76,34 +89,16 @@ impl Grid {
     pub fn initialise(&mut self) {
         for position in self.all_positions() {
             // let value = self.rng.gen_range(0..=1) == 1;
-            self.set_cell(&position, false);
+            self.set_cell(&position, Cell::new(Kind::Air));
         }
         self.push_update();
     }
 
     #[wasm_bindgen]
-    pub fn update(&mut self) {
+    pub fn update(&mut self, tick: i32) {
         for position in self.all_positions() {
-            let mut total = 0;
-            let cell_value = self.get_cell(&position).unwrap_or(false);
-
-            for y in -1..=1 {
-                for x in -1..=1 {
-                    if y == 0 && x == 0 {
-                        continue;
-                    }
-                    let value = self
-                        .get_cell(&Position::new(position.x + x, position.y + y))
-                        .unwrap_or(false);
-                    total += if value { 1 } else { 0 }
-                }
-            }
-            // total += self.rng.gen_range(-4..=5);
-            if cell_value {
-                self.set_cell(&position, total == 2 || total == 3);
-            } else {
-                self.set_cell(&position, total == 3);
-            }
+            let cell = self.get_cell(&position);
+            cell.kind.update(&cell, &position, self);
         }
         self.push_update();
     }
@@ -112,7 +107,7 @@ impl Grid {
     pub fn draw(&self, canvas: HtmlCanvasElement, pixel_size: u32) -> Result<(), JsValue> {
         let context = canvas
             .get_context("2d")?
-            .ok_or("Failed to get canvas context")?
+            .ok_or("Failed to get canvas context :(")?
             .dyn_into::<CanvasRenderingContext2d>()?;
 
         let width = self.width as u32;
@@ -121,16 +116,17 @@ impl Grid {
         let mut data = vec![255; (width * height * pixel_size * pixel_size * 4) as usize];
 
         for position in self.all_positions() {
-            if self.get_cell(&position).unwrap_or(false) {
+            let cell = self.get_cell(&position);
+            if cell.kind == Kind::Sand {
                 let x_start = position.x as u32 * pixel_size;
-                let y_start = position.y as u32 * pixel_size;
+                let y_start = (self.height - position.y - 1) as u32 * pixel_size;
 
                 for y in 0..pixel_size {
                     for x in 0..pixel_size {
                         let index = ((y_start + y) * width * pixel_size + (x_start + x)) * 4;
-                        data[index as usize] = 0; // R
-                        data[index as usize + 1] = 0; // G
-                        data[index as usize + 2] = 0; // B
+                        data[index as usize] = cell.color.r; // R
+                        data[index as usize + 1] = cell.color.g; // G
+                        data[index as usize + 2] = cell.color.b; // B
                         data[index as usize + 3] = 255; // A
                     }
                 }
