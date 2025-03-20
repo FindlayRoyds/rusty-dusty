@@ -1,8 +1,8 @@
 import init, { Game } from "../public/wasm/wasm_crate.js";
 import bresenham from "bresenham";
 
-const NUM_CELLS_X = 380;
-const NUM_CELLS_Y = 220;
+const NUM_CELLS_X = 200;
+const NUM_CELLS_Y = 200;
 const LOGGING = true;
 interface Config {
   goalFPS: number; // essentially goal fps

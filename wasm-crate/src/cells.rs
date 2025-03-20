@@ -94,7 +94,7 @@ fn update_sand(_: &Cell, position: &Vector, grid: &mut Game) {
     let side_position = position + &Vector::new(direction, 0);
     let below_position = position + &Vector::new(direction, -1);
     if grid.is_type(&below_position, Kind::Air) && grid.is_type(&side_position, Kind::Air) {
-        grid.swap_cells(position, &side_position);
+        grid.swap_cells(position, &below_position);
         return;
     }
 }
