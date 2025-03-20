@@ -66,9 +66,10 @@ pub enum Kind {
 }
 
 impl Kind {
-    pub fn new(&self, time: i32) -> Cell {
+    pub fn new(&self, time: Option<i32>) -> Cell {
         match self {
-            Kind::Sand => create_sand(time),
+            Kind::Sand => create_sand(time.unwrap()),
+            Kind::Air => create_air(),
             _ => Cell::new(self.clone()),
         }
     }
@@ -79,6 +80,12 @@ impl Kind {
             _ => {}
         }
     }
+}
+
+fn create_air() -> Cell {
+    let mut cell = Cell::new(Kind::Air);
+    cell.color = Color::new(229, 243, 253);
+    return cell;
 }
 
 fn update_sand(_: &Cell, position: &Vector, grid: &mut Game) {

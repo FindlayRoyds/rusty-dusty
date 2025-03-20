@@ -98,7 +98,7 @@ impl Game {
     #[wasm_bindgen]
     pub fn initialise(&mut self) {
         for position in self.all_positions() {
-            self.set_cell(&position, Cell::new(Kind::Air));
+            self.set_cell(&position, Kind::Air.new(None));
         }
     }
 
@@ -136,7 +136,7 @@ impl Game {
                     continue;
                 }
 
-                self.set_cell(&position, Kind::Sand.new(time));
+                self.set_cell(&position, Kind::Sand.new(Some(time)));
             }
         }
     }
@@ -155,18 +155,16 @@ impl Game {
 
         for position in self.all_positions() {
             let cell = self.get_cell(&position);
-            if cell.kind == Kind::Sand {
-                let x_start = position.x as u32 * pixel_size;
-                let y_start = (self.grid_height - position.y - 1) as u32 * pixel_size;
+            let x_start = position.x as u32 * pixel_size;
+            let y_start = (self.grid_height - position.y - 1) as u32 * pixel_size;
 
-                for y in 0..pixel_size {
-                    for x in 0..pixel_size {
-                        let index = ((y_start + y) * width * pixel_size + (x_start + x)) * 4;
-                        data[index as usize] = cell.color.r; // R
-                        data[index as usize + 1] = cell.color.g; // G
-                        data[index as usize + 2] = cell.color.b; // B
-                        data[index as usize + 3] = 255; // A
-                    }
+            for y in 0..pixel_size {
+                for x in 0..pixel_size {
+                    let index = ((y_start + y) * width * pixel_size + (x_start + x)) * 4;
+                    data[index as usize] = cell.color.r; // R
+                    data[index as usize + 1] = cell.color.g; // G
+                    data[index as usize + 2] = cell.color.b; // B
+                    data[index as usize + 3] = 255; // A
                 }
             }
         }

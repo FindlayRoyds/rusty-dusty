@@ -20,11 +20,13 @@ function testPerformance(name: string, fn: () => void) {
   console.log(`${name} took ${end - start} ms`);
 }
 
-function resizeCanvas(canvas: HTMLCanvasElement) {
+function resizeCanvas(canvas: HTMLCanvasElement): number {
   const width = window.innerWidth;
   const height = window.innerHeight;
 
-  const cellSize = Math.min(width / NUM_CELLS_X, height / NUM_CELLS_Y);
+  const cellSize = Math.floor(
+    Math.min(width / NUM_CELLS_X, height / NUM_CELLS_Y)
+  );
 
   canvas.width = NUM_CELLS_X * cellSize;
   canvas.height = NUM_CELLS_Y * cellSize;
@@ -104,7 +106,7 @@ async function runWasm(config: Config) {
   let pixelSizeRef = { value: Math.floor(resizeCanvas(canvas)) };
 
   window.addEventListener("resize", () => {
-    pixelSizeRef.value = Math.floor(resizeCanvas(canvas));
+    pixelSizeRef.value = resizeCanvas(canvas);
     grid.draw(canvas, pixelSizeRef.value);
   });
 
