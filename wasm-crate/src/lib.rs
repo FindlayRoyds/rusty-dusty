@@ -1,4 +1,5 @@
 use hashbrown::HashSet; // explained in Cargo.toml
+use vector2d::Vector2D;
 use wasm_bindgen::Clamped;
 use wasm_bindgen::prelude::*;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, ImageData};
@@ -124,14 +125,18 @@ impl Game {
     }
 
     #[wasm_bindgen]
-    pub fn click_at(&mut self, x: i32, y: i32, radius: i32, time: i32) {
-        for y_offset in -radius..=radius {
-            for x_offset in -radius..=radius {
-                let offset = Vector::new(x_offset, y_offset);
-                if offset.length_squared() > radius * radius {
+    pub fn click_at(&mut self, x: f32, y: f32, radius: f32, time: i32) {
+        let left_bound = (x - radius).floor() as i32;
+        let right_bound = (x + radius).ceil() as i32;
+        let bottom_bound = (y - radius).floor() as i32;
+        let top_bound = (y + radius).ceil() as i32;
+        for cell_x in left_bound..=right_bound {
+            for cell_y in bottom_bound..=top_bound {
+                let offset = Vector2D::new(x, y) - Vector2D::new(cell_x as f32, cell_y as f32);
+                if offset.length_squared() as f32 > radius * radius {
                     continue;
                 }
-                let position = Vector::new(x_offset + x, y_offset + (self.grid_height - y - 1));
+                let position = Vector::new(cell_x, self.grid_height - cell_y - 1);
                 if !self.is_type(&position, Kind::Air) {
                     continue;
                 }

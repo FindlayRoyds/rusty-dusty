@@ -68,26 +68,21 @@ function addMouseListener(
 
   const update = () => {
     if (isDragging) {
-      const cellX = Math.floor(x / pixelSizeRef.value);
-      const cellY = Math.floor(y / pixelSizeRef.value);
+      const cellX = x / pixelSizeRef.value;
+      const cellY = y / pixelSizeRef.value;
 
       if (lastX !== null && lastY !== null) {
-        if (cellX == lastX && cellY == lastY) {
-          grid.click_at(cellX, cellY, config.brushRadius, Date.now());
-        } else {
-          // line from last mouse point so the drawing isn't patchy
-          const points = bresenham(lastX, lastY, cellX, cellY);
-          points.shift();
-          const timeStep = (Date.now() - lastTime) / points.length;
-          points.forEach((point, index) => {
-            grid.click_at(
-              point.x,
-              point.y,
-              config.brushRadius,
-              lastTime + index * timeStep
-            );
-          });
-        }
+        // line from last mouse point so the drawing isn't patchy
+        const points = bresenham(lastX, lastY, cellX, cellY);
+        const timeStep = (Date.now() - lastTime) / points.length;
+        points.forEach((point, index) => {
+          grid.click_at(
+            point.x,
+            point.y,
+            config.brushRadius,
+            lastTime + index * timeStep
+          );
+        });
       } else {
         grid.click_at(cellX, cellY, config.brushRadius, Date.now());
       }
