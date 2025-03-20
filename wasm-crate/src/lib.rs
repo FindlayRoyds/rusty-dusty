@@ -1,16 +1,20 @@
+use hashbrown::HashSet; // explained in Cargo.toml
 use wasm_bindgen::Clamped;
 use wasm_bindgen::prelude::*;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, ImageData};
 
 mod cells;
-use cells::*;
+use cells::{Cell, Kind, Vector};
+
+mod utils;
+use utils::remove_random;
 
 #[wasm_bindgen]
 pub struct Game {
     grid_width: i32,
     grid_height: i32,
     grid: Vec<Vec<Cell>>,
-    grid_update: Vec<Vec<Cell>>,
+    cells_to_update: HashSet<Vector>,
 }
 
 #[wasm_bindgen]
@@ -21,10 +25,7 @@ impl Game {
             grid_width,
             grid_height,
             grid: vec![vec![Cell::new(Kind::Air); grid_width as usize]; grid_height as usize],
-            grid_update: vec![
-                vec![Cell::new(Kind::Air); grid_width as usize];
-                grid_height as usize
-            ],
+            cells_to_update: HashSet::new(),
         }
     }
 
@@ -48,6 +49,7 @@ impl Game {
     }
 
     fn get_cell(&self, position: &Vector) -> Cell {
+        // Should only be called during update step
         if !self.is_in_bounds(position) {
             return Cell::new(Kind::Wall);
         }
@@ -62,10 +64,11 @@ impl Game {
         }
         let x = (position.x + self.grid_width) % self.grid_width;
         let y = (position.y + self.grid_height) % self.grid_height;
-        self.grid_update[y as usize][x as usize] = value;
+        self.grid[y as usize][x as usize] = value;
     }
 
     fn swap_cells(&mut self, position1: &Vector, position2: &Vector) {
+        // Should only be called during update step
         if !self.is_in_bounds(position1) || !self.is_in_bounds(position2) {
             return;
         }
@@ -73,32 +76,44 @@ impl Game {
         let cell2 = self.get_cell(position2);
         self.set_cell(position1, cell2);
         self.set_cell(position2, cell1);
+
+        if self.cells_to_update.contains(position1) {
+            self.cells_to_update.remove(position1);
+            self.cells_to_update.insert(*position2);
+        } else if self.cells_to_update.contains(position2) {
+            self.cells_to_update.remove(position2);
+            self.cells_to_update.insert(*position1);
+        }
     }
 
     fn is_type(&self, position: &Vector, kind: Kind) -> bool {
         self.get_cell(position).kind == kind
     }
 
-    fn push_update(&mut self) {
-        self.grid = self.grid_update.clone();
-    }
-
     #[wasm_bindgen]
     pub fn initialise(&mut self) {
         for position in self.all_positions() {
-            // let value = self.rng.gen_range(0..=1) == 1;
             self.set_cell(&position, Cell::new(Kind::Air));
         }
-        self.push_update();
     }
 
     #[wasm_bindgen]
     pub fn update(&mut self) {
-        for position in self.all_positions() {
-            let cell = self.get_cell(&position);
-            cell.kind.update(&cell, &position, self);
+        let mut positions = self.all_positions();
+        self.cells_to_update.clear(); // shouldn't be needed but is a nice safe-guard
+        self.cells_to_update.extend(positions.clone());
+
+        for _ in 0..self.cells_to_update.len() {
+            if let Some(position) = remove_random(&mut self.cells_to_update) {
+                let cell = self.get_cell(&position);
+                cell.kind.update(&cell, &position, self);
+            }
         }
-        self.push_update();
+        // fastrand::shuffle(&mut positions);
+        // for position in positions {
+        //     let cell = self.get_cell(&position);
+        //     cell.kind.update(&cell, &position, self);
+        // }
     }
 
     #[wasm_bindgen]
@@ -117,8 +132,6 @@ impl Game {
                 self.set_cell(&position, Kind::Sand.new(time));
             }
         }
-
-        self.push_update();
     }
 
     #[wasm_bindgen]

@@ -1,9 +1,9 @@
 import init, { Game } from "../public/wasm/wasm_crate.js";
 import bresenham from "bresenham";
 
-const NUM_CELLS_X = 500;
-const NUM_CELLS_Y = 250;
-const LOGGING = false;
+const NUM_CELLS_X = 380;
+const NUM_CELLS_Y = 220;
+const LOGGING = true;
 interface Config {
   goalFPS: number; // essentially goal fps
   brushRadius: number;
