@@ -34,13 +34,15 @@ function resizeCanvas(canvas: HTMLCanvasElement): number {
   return cellSize;
 }
 
-function addClickListener(
+function addMouseListener(
   canvas: HTMLCanvasElement,
   grid: Game,
   pixelSizeRef: { value: number },
   config: Config
-) {
+): () => void {
   let isDragging = false;
+  let x = 0;
+  let y = 0;
   let lastX: number | null = null;
   let lastY: number | null = null;
   let lastTime = Date.now();
@@ -48,34 +50,8 @@ function addClickListener(
   const handleMouseMove = (event: MouseEvent) => {
     if (isDragging) {
       const rect = canvas.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-
-      const cellX = Math.floor(x / pixelSizeRef.value);
-      const cellY = Math.floor(y / pixelSizeRef.value);
-      if (cellX == lastX && cellY == lastY) {
-        return;
-      }
-
-      if (lastX !== null && lastY !== null) {
-        const points = bresenham(lastX, lastY, cellX, cellY);
-        points.shift();
-        const timeStep = (Date.now() - lastTime) / points.length;
-        points.forEach((point, index) => {
-          grid.click_at(
-            point.x,
-            point.y,
-            config.brushRadius,
-            lastTime + index * timeStep
-          );
-        });
-      } else {
-        grid.click_at(cellX, cellY, config.brushRadius, Date.now());
-      }
-
-      lastX = cellX;
-      lastY = cellY;
-      lastTime = Date.now();
+      x = event.clientX - rect.left;
+      y = event.clientY - rect.top;
     }
   };
 
@@ -90,10 +66,44 @@ function addClickListener(
     lastY = null;
   };
 
+  const update = () => {
+    if (isDragging) {
+      const cellX = Math.floor(x / pixelSizeRef.value);
+      const cellY = Math.floor(y / pixelSizeRef.value);
+
+      if (lastX !== null && lastY !== null) {
+        if (cellX == lastX && cellY == lastY) {
+          grid.click_at(cellX, cellY, config.brushRadius, Date.now());
+        } else {
+          // line from last mouse point so the drawing isn't patchy
+          const points = bresenham(lastX, lastY, cellX, cellY);
+          points.shift();
+          const timeStep = (Date.now() - lastTime) / points.length;
+          points.forEach((point, index) => {
+            grid.click_at(
+              point.x,
+              point.y,
+              config.brushRadius,
+              lastTime + index * timeStep
+            );
+          });
+        }
+      } else {
+        grid.click_at(cellX, cellY, config.brushRadius, Date.now());
+      }
+
+      lastX = cellX;
+      lastY = cellY;
+      lastTime = Date.now();
+    }
+  };
+
   canvas.addEventListener("mousedown", handleMouseDown);
   canvas.addEventListener("mousemove", handleMouseMove);
   canvas.addEventListener("mouseup", handleMouseUp);
   canvas.addEventListener("mouseleave", handleMouseUp);
+
+  return update;
 }
 
 async function runWasm(config: Config) {
@@ -110,16 +120,17 @@ async function runWasm(config: Config) {
     grid.draw(canvas, pixelSizeRef.value);
   });
 
-  addClickListener(canvas, grid, pixelSizeRef, config);
+  let mouse_callback = addMouseListener(canvas, grid, pixelSizeRef, config);
 
   setInterval(
     () => {
       testPerformance("updating", () => grid.update());
       testPerformance("drawing", () => grid.draw(canvas, pixelSizeRef.value));
+      mouse_callback();
     },
     config.goalFPS == -1 ? 0 : 1000 / config.goalFPS
   );
 }
 
-let config: Config = { goalFPS: 60, brushRadius: 15 };
+let config: Config = { goalFPS: 60, brushRadius: 7 };
 runWasm(config);

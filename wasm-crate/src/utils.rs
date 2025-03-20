@@ -5,6 +5,7 @@ pub fn remove_random<T>(set: &mut HashSet<T>) -> Option<T>
 where
     T: Eq + PartialEq + Hash,
 {
+    // Found on the internet
     if set.is_empty() {
         return None;
     }
