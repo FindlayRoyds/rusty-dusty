@@ -6,6 +6,8 @@ use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, ImageData};
 mod cells;
 use cells::{Cell, Kind, Vector};
 
+const USE_HASHBROWN: bool = false;
+
 mod utils;
 use utils::remove_random;
 
@@ -77,6 +79,9 @@ impl Game {
         self.set_cell(position1, cell2);
         self.set_cell(position2, cell1);
 
+        if !USE_HASHBROWN {
+            return;
+        }
         if self.cells_to_update.contains(position1) {
             self.cells_to_update.remove(position1);
             self.cells_to_update.insert(*position2);
@@ -100,20 +105,22 @@ impl Game {
     #[wasm_bindgen]
     pub fn update(&mut self) {
         let mut positions = self.all_positions();
-        self.cells_to_update.clear(); // shouldn't be needed but is a nice safe-guard
-        self.cells_to_update.extend(positions.clone());
-
-        for _ in 0..self.cells_to_update.len() {
-            if let Some(position) = remove_random(&mut self.cells_to_update) {
+        if USE_HASHBROWN {
+            self.cells_to_update.clear(); // shouldn't be needed but is a nice safe-guard
+            self.cells_to_update.extend(positions.clone());
+            for _ in 0..self.cells_to_update.len() {
+                if let Some(position) = remove_random(&mut self.cells_to_update) {
+                    let cell = self.get_cell(&position);
+                    cell.kind.update(&cell, &position, self);
+                }
+            }
+        } else {
+            fastrand::shuffle(&mut positions);
+            for position in positions {
                 let cell = self.get_cell(&position);
                 cell.kind.update(&cell, &position, self);
             }
         }
-        // fastrand::shuffle(&mut positions);
-        // for position in positions {
-        //     let cell = self.get_cell(&position);
-        //     cell.kind.update(&cell, &position, self);
-        // }
     }
 
     #[wasm_bindgen]
