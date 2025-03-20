@@ -51,10 +51,6 @@ impl Cell {
             color: Color::new(0, 0, 0),
         }
     }
-
-    // pub fn new_with_color(kind: Kind, color: Color) -> Self {
-    //     Cell { kind, color }
-    // }
 }
 
 // #[wasm_bindgen]
@@ -107,7 +103,7 @@ fn update_sand(_: &Cell, position: &Vector, grid: &mut Game) {
 }
 
 fn create_sand(time: i32) -> Cell {
-    let base_color = 45.0;
+    let base_color = 70.0;
     let color_range = 7.0;
     let lightness =
         ((time as f64 / 15.0).rem_euclid(color_range * 2.0) - color_range).abs() + base_color;
