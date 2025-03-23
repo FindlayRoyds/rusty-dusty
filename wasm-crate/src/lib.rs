@@ -147,7 +147,7 @@ impl Game {
     }
 
     #[wasm_bindgen]
-    pub fn draw(&self, canvas: HtmlCanvasElement, pixel_size: u32) -> Result<(), JsValue> {
+    pub fn draw(&self, canvas: HtmlCanvasElement) -> Result<(), JsValue> {
         let context = canvas
             .get_context("2d")?
             .ok_or("Failed to get canvas context :(")?
@@ -156,29 +156,22 @@ impl Game {
         let width = self.grid_width as u32;
         let height = self.grid_height as u32;
 
-        let mut data = vec![255; (width * height * pixel_size * pixel_size * 4) as usize];
+        let mut data = vec![255; (width * height * 4) as usize];
 
         for position in self.all_positions() {
             let cell = self.get_cell(&position);
-            let x_start = position.x as u32 * pixel_size;
-            let y_start = (self.grid_height - position.y - 1) as u32 * pixel_size;
+            let x = position.x as u32;
+            let y = (self.grid_height - position.y - 1) as u32;
 
-            for y in 0..pixel_size {
-                for x in 0..pixel_size {
-                    let index = ((y_start + y) * width * pixel_size + (x_start + x)) * 4;
-                    data[index as usize] = cell.color.r; // R
-                    data[index as usize + 1] = cell.color.g; // G
-                    data[index as usize + 2] = cell.color.b; // B
-                    data[index as usize + 3] = 255; // A
-                }
-            }
+            let index = (y * width + x) * 4;
+            data[index as usize] = cell.color.r; // R
+            data[index as usize + 1] = cell.color.g; // G
+            data[index as usize + 2] = cell.color.b; // B
+            data[index as usize + 3] = 255; // A
         }
 
-        let image_data = ImageData::new_with_u8_clamped_array_and_sh(
-            Clamped(&mut data),
-            width * pixel_size,
-            height * pixel_size,
-        )?;
+        let image_data =
+            ImageData::new_with_u8_clamped_array_and_sh(Clamped(&mut data), width, height)?;
         context.put_image_data(&image_data, 0.0, 0.0)?;
 
         Ok(())
