@@ -1,10 +1,12 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import init, { Game } from "../../public/wasm/wasm_crate.js";
+  import init, { Game, Kind } from "../../public/wasm/wasm_crate.js";
   import type { Config } from "../types";
   import bresenham from "bresenham";
 
   export let config = { goalFPS: 60, brushRadius: 7 };
+  export let selectedKind: Kind = Kind.Sand;
+
   let canvas: HTMLCanvasElement;
   let grid: Game;
   let pixelSizeRef = { value: 1 };
@@ -69,7 +71,7 @@
         const cellY = y / pixelSizeRef.value;
 
         if (lastX !== null && lastY !== null) {
-          //   line from last mouse point so the drawing isn't patchy
+          // Draw a line from the last mouse point so the drawing isn't patchy
           const points = bresenham(lastX, lastY, cellX, cellY);
           const timeStep = (Date.now() - lastTime) / points.length;
           points.forEach((point, index) => {
@@ -77,11 +79,18 @@
               point.x,
               point.y,
               config.brushRadius,
-              lastTime + index * timeStep
+              lastTime + index * timeStep,
+              selectedKind
             );
           });
         } else {
-          grid.click_at(cellX, cellY, config.brushRadius, Date.now());
+          grid.click_at(
+            cellX,
+            cellY,
+            config.brushRadius,
+            Date.now(),
+            selectedKind
+          );
         }
 
         lastX = cellX;
@@ -91,9 +100,9 @@
     };
 
     canvas.addEventListener("mousedown", handleMouseDown);
-    canvas.addEventListener("mousemove", handleMouseMove);
-    canvas.addEventListener("mouseup", handleMouseUp);
-    canvas.addEventListener("mouseleave", handleMouseUp);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    // canvas.addEventListener("mouseleave", handleMouseUp);
 
     return update;
   }
@@ -101,7 +110,6 @@
   async function runWasm() {
     await init();
 
-    //   const canvas = document.getElementById("display_canvas") as HTMLCanvasElement;
     grid = new Game(NUM_CELLS_X, NUM_CELLS_Y);
     testPerformance("initialising", () => grid.initialise());
 
@@ -137,12 +145,8 @@
 
 <style>
   canvas {
-    display: block;
-    margin: auto;
-    border: 1px solid black;
-    width: 100vh;
-    height: 100vh;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
+    height: 100%;
   }
 </style>

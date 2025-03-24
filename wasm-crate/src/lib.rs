@@ -125,7 +125,7 @@ impl Game {
     }
 
     #[wasm_bindgen]
-    pub fn click_at(&mut self, x: f32, y: f32, radius: f32, time: i32) {
+    pub fn click_at(&mut self, x: f32, y: f32, radius: f32, time: i32, kind: Kind) {
         let left_bound = (x - radius).floor() as i32;
         let right_bound = (x + radius).ceil() as i32;
         let bottom_bound = (y - radius).floor() as i32;
@@ -137,11 +137,11 @@ impl Game {
                     continue;
                 }
                 let position = Vector::new(cell_x, self.grid_height - cell_y - 1);
-                if !self.is_type(&position, Kind::Air) {
+                if !self.is_type(&position, Kind::Air) && kind != Kind::Air {
                     continue;
                 }
 
-                self.set_cell(&position, Kind::Sand.new(Some(time)));
+                self.set_cell(&position, kind.new(Some(time)));
             }
         }
     }

@@ -1,6 +1,7 @@
 use crate::Game;
 use fastrand;
 use vector2d::Vector2D;
+use wasm_bindgen::prelude::*;
 
 // pub type Color = Vector3<u8>;
 #[derive(Clone)]
@@ -53,8 +54,8 @@ impl Cell {
     }
 }
 
-// #[wasm_bindgen]
-#[derive(PartialEq, Clone)]
+#[wasm_bindgen]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Kind {
     Air,
     Wall,
@@ -78,9 +79,24 @@ impl Kind {
     }
 }
 
+// ---------- AIR
+
 fn create_air() -> Cell {
     let mut cell = Cell::new(Kind::Air);
     cell.color = Color::new(229, 243, 253);
+    return cell;
+}
+
+// ---------- SAND
+
+fn create_sand(time: i32) -> Cell {
+    let base_color = 70.0;
+    let color_range = 7.0;
+    let lightness =
+        ((time as f64 / 15.0).rem_euclid(color_range * 2.0) - color_range).abs() + base_color;
+    let color = Color::from_hsl(42.0, 50.0, lightness);
+    let mut cell = Cell::new(Kind::Sand);
+    cell.color = color;
     return cell;
 }
 
@@ -100,15 +116,4 @@ fn update_sand(_: &Cell, position: &Vector, grid: &mut Game) {
         grid.swap_cells(position, &below_position);
         return;
     }
-}
-
-fn create_sand(time: i32) -> Cell {
-    let base_color = 70.0;
-    let color_range = 7.0;
-    let lightness =
-        ((time as f64 / 15.0).rem_euclid(color_range * 2.0) - color_range).abs() + base_color;
-    let color = Color::from_hsl(42.0, 50.0, lightness);
-    let mut cell = Cell::new(Kind::Sand);
-    cell.color = color;
-    return cell;
 }
