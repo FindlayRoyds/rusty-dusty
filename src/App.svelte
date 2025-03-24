@@ -4,11 +4,10 @@
   import type { Config } from "./types";
   import { Kind } from "../public/wasm/wasm_crate.js";
 
-  let config: Config = { goalFPS: 60, brushRadius: 7 };
-  let selectedKind: Kind = Kind.Sand;
+  let config: Config = { goalFPS: 60, brushRadius: 7, selectedKind: Kind.Sand };
 
   function selectKind(kind: Kind) {
-    selectedKind = kind;
+    config.selectedKind = kind;
   }
 
   function updateBrushSize(event: Event) {
@@ -20,7 +19,7 @@
 <main>
   <div class="container">
     <div class="canvas-container">
-      <Canvas {config} {selectedKind} />
+      <Canvas {config} />
     </div>
     <div class="divider"></div>
     <div class="toolbar">
@@ -40,9 +39,21 @@
       <div class="toolbar-divider"></div>
       <div class="toolbar-section bottom-section">
         <div class="button-container">
-          <KindButton kind={Kind.Air} {selectedKind} {selectKind} />
-          <KindButton kind={Kind.Sand} {selectedKind} {selectKind} />
-          <KindButton kind={Kind.Wall} {selectedKind} {selectKind} />
+          <KindButton
+            kind={Kind.Air}
+            selectedKind={config.selectedKind}
+            {selectKind}
+          />
+          <KindButton
+            kind={Kind.Sand}
+            selectedKind={config.selectedKind}
+            {selectKind}
+          />
+          <KindButton
+            kind={Kind.Wall}
+            selectedKind={config.selectedKind}
+            {selectKind}
+          />
         </div>
       </div>
     </div>
@@ -93,7 +104,7 @@
   .toolbar {
     display: flex;
     flex-direction: column;
-    min-width: 180px;
+    min-width: 250px;
   }
 
   .toolbar-section {

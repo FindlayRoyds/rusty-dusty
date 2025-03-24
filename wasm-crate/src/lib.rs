@@ -155,26 +155,29 @@ impl Game {
             .dyn_into::<CanvasRenderingContext2d>()
             .map_err(|_| "Canvas is not a 2D context :(")?;
 
-        let width = self.grid_width as u32;
-        let height = self.grid_height as u32;
+        // let width = self.grid_width as u32;
+        // let height = self.grid_height as u32;
 
-        let mut data = vec![255; (width * height * 4) as usize];
+        let mut data = vec![255; (self.grid_width * self.grid_height * 4) as usize];
 
         for position in self.all_positions() {
             let cell = self.get_cell(&position);
             let x = position.x as u32;
             let y = (self.grid_height - position.y - 1) as u32;
 
-            let index = (y * width + x) * 4;
+            let index = (y * self.grid_width as u32 + x) * 4;
             data[index as usize] = cell.color.r; // R
             data[index as usize + 1] = cell.color.g; // G
             data[index as usize + 2] = cell.color.b; // B
             data[index as usize + 3] = 255; // A
         }
 
-        let image_data =
-            ImageData::new_with_u8_clamped_array_and_sh(Clamped(&mut data), width, height)
-                .map_err(|_| "Failed to create image data for rendering :(")?;
+        let image_data = ImageData::new_with_u8_clamped_array_and_sh(
+            Clamped(&mut data),
+            self.grid_width as u32,
+            self.grid_height as u32,
+        )
+        .map_err(|_| "Failed to create image data for rendering :(")?;
         context
             .put_image_data(&image_data, 0.0, 0.0)
             .map_err(|_| "Failed to draw image data to the canvas :(")?;

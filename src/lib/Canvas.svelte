@@ -1,11 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import init, { Game, Kind } from "../../public/wasm/wasm_crate.js";
+  import init, { Game } from "../../public/wasm/wasm_crate.js";
   import type { Config } from "../types";
   import bresenham from "bresenham";
 
-  export let config = { goalFPS: 60, brushRadius: 7 };
-  export let selectedKind: Kind = Kind.Sand;
+  export let config: Config;
 
   let canvas: HTMLCanvasElement;
   let grid: Game;
@@ -24,11 +23,6 @@
     fn();
     const end = performance.now();
     console.log(`${name} took ${end - start} ms`);
-  }
-
-  function resizeCanvas(canvas: HTMLCanvasElement) {
-    canvas.width = NUM_CELLS_X;
-    canvas.height = NUM_CELLS_Y;
   }
 
   function addMouseListener(
@@ -80,7 +74,7 @@
               point.y,
               config.brushRadius,
               lastTime + index * timeStep,
-              selectedKind
+              config.selectedKind
             );
           });
         } else {
@@ -89,7 +83,7 @@
             cellY,
             config.brushRadius,
             Date.now(),
-            selectedKind
+            config.selectedKind
           );
         }
 
@@ -113,12 +107,8 @@
     grid = new Game(NUM_CELLS_X, NUM_CELLS_Y);
     testPerformance("initialising", () => grid.initialise());
 
-    let pixelSizeRef = { value: resizeCanvas(canvas) };
-
-    window.addEventListener("resize", () => {
-      pixelSizeRef.value = resizeCanvas(canvas);
-      grid.draw(canvas);
-    });
+    canvas.width = NUM_CELLS_X;
+    canvas.height = NUM_CELLS_Y;
 
     let mouse_callback = addMouseListener(canvas, grid, config);
 

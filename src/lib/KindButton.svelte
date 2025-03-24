@@ -9,17 +9,17 @@
   }
 
   const kindNames = {
-    [Kind.Air]: "Air",
+    [Kind.Air]: "Clear",
     [Kind.Sand]: "Sand",
     [Kind.Wall]: "Wall",
   };
   const kindColors = {
-    [Kind.Air]: "#add8e6",
+    [Kind.Air]: "#e55656",
     [Kind.Sand]: "#e6c88e",
     [Kind.Wall]: "#8b5a2b",
   };
   const kindEmojis = {
-    [Kind.Air]: "🌬️",
+    [Kind.Air]: "🚫",
     [Kind.Sand]: "🏖️",
     [Kind.Wall]: "🧱",
   };
@@ -43,7 +43,7 @@
 
 <style>
   button {
-    width: 200px;
+    width: 100%;
     height: 60px;
     border-radius: 12px;
     border: 4px solid;
