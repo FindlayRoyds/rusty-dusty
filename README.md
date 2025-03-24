@@ -10,8 +10,8 @@ On the right is the toolbar, where you can use the slider to change the brush si
 The frontend is written in Svelte + TypeScript, and makes function calls to WASM functions written in Rust.
 ## Running
 1. Ensure you have cargo and npm installed.
-1. Install wasm-pack with `cargo install wasm-pack`.
-1. Install npm dependencies with `npm install` (in the project's root directory).
+1. Ensure wasm-pack is installed with `cargo install wasm-pack`.
+1. Install npm dependencies with `npm install --include=dev` (in the project's root directory).
 1. Build the WASM with `./build-wasm.sh`.
 1. Run `npm run dev` to start a local server, and visit the specified localhost link
 (probably [localhost:5173](http://localhost:5173)).

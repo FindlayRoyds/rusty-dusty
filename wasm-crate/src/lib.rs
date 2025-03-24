@@ -115,12 +115,13 @@ impl Game {
                     cell.kind.update(&cell, &position, self);
                 }
             }
-        } else {
-            fastrand::shuffle(&mut positions);
-            for position in positions {
-                let cell = self.get_cell(&position);
-                cell.kind.update(&cell, &position, self);
-            }
+            return;
+        }
+
+        fastrand::shuffle(&mut positions);
+        for position in positions {
+            let cell = self.get_cell(&position);
+            cell.kind.update(&cell, &position, self);
         }
     }
 
@@ -151,7 +152,8 @@ impl Game {
         let context = canvas
             .get_context("2d")?
             .ok_or("Failed to get canvas context :(")?
-            .dyn_into::<CanvasRenderingContext2d>()?;
+            .dyn_into::<CanvasRenderingContext2d>()
+            .map_err(|_| "Canvas is not a 2D context :(")?;
 
         let width = self.grid_width as u32;
         let height = self.grid_height as u32;
@@ -171,8 +173,11 @@ impl Game {
         }
 
         let image_data =
-            ImageData::new_with_u8_clamped_array_and_sh(Clamped(&mut data), width, height)?;
-        context.put_image_data(&image_data, 0.0, 0.0)?;
+            ImageData::new_with_u8_clamped_array_and_sh(Clamped(&mut data), width, height)
+                .map_err(|_| "Failed to create image data for rendering :(")?;
+        context
+            .put_image_data(&image_data, 0.0, 0.0)
+            .map_err(|_| "Failed to draw image data to the canvas :(")?;
 
         Ok(())
     }
