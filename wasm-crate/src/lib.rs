@@ -7,8 +7,6 @@ use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, ImageData};
 mod cells;
 use cells::{Cell, Kind, Vector};
 
-const USE_HASHBROWN: bool = false;
-
 mod utils;
 use utils::remove_random;
 
@@ -80,9 +78,6 @@ impl Game {
         self.set_cell(position1, cell2);
         self.set_cell(position2, cell1);
 
-        if !USE_HASHBROWN {
-            return;
-        }
         if self.cells_to_update.contains(position1) {
             self.cells_to_update.remove(position1);
             self.cells_to_update.insert(*position2);
@@ -104,9 +99,9 @@ impl Game {
     }
 
     #[wasm_bindgen]
-    pub fn update(&mut self) {
+    pub fn update(&mut self, use_hashbrown: bool) {
         let mut positions = self.all_positions();
-        if USE_HASHBROWN {
+        if use_hashbrown {
             self.cells_to_update.clear(); // shouldn't be needed but is a nice safe-guard
             self.cells_to_update.extend(positions.clone());
             for _ in 0..self.cells_to_update.len() {
@@ -155,9 +150,6 @@ impl Game {
             .dyn_into::<CanvasRenderingContext2d>()
             .map_err(|_| "Canvas is not a 2D context :(")?;
 
-        // let width = self.grid_width as u32;
-        // let height = self.grid_height as u32;
-
         let mut data = vec![255; (self.grid_width * self.grid_height * 4) as usize];
 
         for position in self.all_positions() {
@@ -169,7 +161,7 @@ impl Game {
             data[index as usize] = cell.color.r; // R
             data[index as usize + 1] = cell.color.g; // G
             data[index as usize + 2] = cell.color.b; // B
-            data[index as usize + 3] = 255; // A
+            data[index as usize + 3] = 255; // Alpha
         }
 
         let image_data = ImageData::new_with_u8_clamped_array_and_sh(

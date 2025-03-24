@@ -114,7 +114,7 @@
 
     setInterval(
       () => {
-        testPerformance("updating", () => grid.update());
+        testPerformance("updating", () => grid.update(config.useHashbrown));
         testPerformance("drawing", () => grid.draw(canvas));
         mouse_callback();
       },

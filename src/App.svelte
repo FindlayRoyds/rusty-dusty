@@ -4,7 +4,12 @@
   import type { Config } from "./types";
   import { Kind } from "../public/wasm/wasm_crate.js";
 
-  let config: Config = { goalFPS: 60, brushRadius: 7, selectedKind: Kind.Sand };
+  let config: Config = {
+    goalFPS: 60,
+    brushRadius: 7,
+    selectedKind: Kind.Sand,
+    useHashbrown: false,
+  };
 
   function selectKind(kind: Kind) {
     config.selectedKind = kind;
@@ -13,6 +18,10 @@
   function updateBrushSize(event: Event) {
     const target = event.target as HTMLInputElement;
     config.brushRadius = parseInt(target.value);
+  }
+
+  function toggleBetterUpdateOrder() {
+    config.useHashbrown = !config.useHashbrown;
   }
 </script>
 
@@ -35,25 +44,27 @@
             on:input={updateBrushSize}
           />
         </div>
+        <div class="toggle-container">
+          <label class="toggle-label">
+            <input
+              type="checkbox"
+              checked={config.useHashbrown}
+              on:change={toggleBetterUpdateOrder}
+            />
+            <span class="toggle-text">Better Update Order (slow)</span>
+          </label>
+        </div>
       </div>
       <div class="toolbar-divider"></div>
       <div class="toolbar-section bottom-section">
         <div class="button-container">
-          <KindButton
-            kind={Kind.Air}
-            selectedKind={config.selectedKind}
-            {selectKind}
-          />
-          <KindButton
-            kind={Kind.Sand}
-            selectedKind={config.selectedKind}
-            {selectKind}
-          />
-          <KindButton
-            kind={Kind.Wall}
-            selectedKind={config.selectedKind}
-            {selectKind}
-          />
+          {#each Object.values(Kind).filter((k) => typeof k === "number") as kind}
+            <KindButton
+              {kind}
+              selectedKind={config.selectedKind}
+              {selectKind}
+            />
+          {/each}
         </div>
       </div>
     </div>
@@ -153,5 +164,24 @@
     display: grid;
     gap: 12px;
     align-content: start;
+  }
+
+  .toggle-container {
+    margin-top: 16px;
+  }
+
+  .toggle-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .toggle-text {
+    font-size: 16px;
+    color: #5c4732;
+    font-weight: bold;
+    font-family: sans-serif;
+    margin-left: 8px;
   }
 </style>
