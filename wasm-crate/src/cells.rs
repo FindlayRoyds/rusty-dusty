@@ -108,7 +108,7 @@ fn create_sand(time: i32) -> Cell {
 fn update_sand(_: &Cell, position: &Vector, grid: &mut Game) {
     if fastrand::u8(0..15) > 0 {
         let below_position = position + &Vector::new(0, -1);
-        let should_sink = || -> bool {
+        let should_fall = || -> bool {
             if grid.is_type(&below_position, Kind::Air) {
                 return true;
             }
@@ -117,7 +117,7 @@ fn update_sand(_: &Cell, position: &Vector, grid: &mut Game) {
             }
             false
         };
-        if should_sink() {
+        if should_fall() {
             grid.swap_cells(position, &below_position);
             return;
         }
@@ -126,7 +126,19 @@ fn update_sand(_: &Cell, position: &Vector, grid: &mut Game) {
     let direction = if fastrand::bool() { -1 } else { 1 };
     let side_position = position + &Vector::new(direction, 0);
     let below_position = position + &Vector::new(direction, -1);
-    if grid.is_type(&below_position, Kind::Air) && grid.is_type(&side_position, Kind::Air) {
+    let should_move = || -> bool {
+        if grid.is_type(&below_position, Kind::Air) && grid.is_type(&side_position, Kind::Air) {
+            return true;
+        }
+        if grid.is_type(&below_position, Kind::Water)
+            || grid.is_type(&below_position, Kind::Air) && grid.is_type(&side_position, Kind::Water)
+            || grid.is_type(&below_position, Kind::Water)
+        {
+            return fastrand::bool();
+        }
+        false
+    };
+    if should_move() {
         grid.swap_cells(position, &below_position);
         return;
     }
