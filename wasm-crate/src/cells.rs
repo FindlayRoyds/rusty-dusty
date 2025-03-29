@@ -64,6 +64,7 @@ pub enum Kind {
     Sand,
     Water,
     Fire,
+    Wood,
 }
 
 impl Kind {
@@ -73,6 +74,7 @@ impl Kind {
             Kind::Air => create_air(),
             Kind::Water => create_water(),
             Kind::Fire => create_fire(),
+            Kind::Wood => create_wood(),
             _ => Cell::new(self.clone()),
         }
     }
@@ -82,6 +84,7 @@ impl Kind {
             Kind::Sand => update_sand(cell, position, grid),
             Kind::Water => update_water(cell, position, grid),
             Kind::Fire => update_fire(cell, position, grid),
+            Kind::Wood => {}
             _ => {}
         }
     }
@@ -179,6 +182,19 @@ fn update_water(cell: &Cell, position: &Vector, grid: &mut Game) {
     }
 }
 
+// ---------- WOOD
+
+fn create_wood() -> Cell {
+    let mut cell = Cell::new(Kind::Wood);
+
+    let hue = 25.0 + fastrand::f64() * 5.0;
+    let saturation = 45.0 + fastrand::f64() * 10.0;
+    let lightness = 18.0 + fastrand::f64() * 7.0;
+    cell.color = Color::from_hsl(hue, saturation, lightness);
+
+    return cell;
+}
+
 // ---------- FIRE
 
 fn create_fire() -> Cell {
@@ -195,16 +211,13 @@ fn create_fire() -> Cell {
 
 fn update_fire(cell: &Cell, position: &Vector, grid: &mut Game) {
     let mut new_cell = cell.clone();
+    let mut mut_position = &position.clone();
 
-    let decay_rate = 1 + (fastrand::u8(0..5) < 4) as u8;
+    let decay_rate = 1 + (fastrand::u8(0..5) < 3) as u8 * 4;
     if new_cell.data > decay_rate {
         new_cell.data -= decay_rate;
     } else {
-        new_cell.data = 0;
-    }
-
-    if new_cell.data == 0 {
-        grid.set_cell(position, create_air());
+        grid.set_cell(mut_position, create_air());
         return;
     }
 
@@ -213,20 +226,51 @@ fn update_fire(cell: &Cell, position: &Vector, grid: &mut Game) {
     let saturation = 85.0 + lifespan_factor * 15.0;
     let lightness = 50.0 + lifespan_factor * 20.0;
     new_cell.color = Color::from_hsl(hue, saturation, lightness);
-    grid.set_cell(position, new_cell);
+    grid.set_cell(mut_position, new_cell);
 
-    let above_position = position + &Vector::new(0, 1);
+    let above_position = mut_position + &Vector::new(0, 1);
+    let direction = if fastrand::bool() { -1 } else { 1 };
+    let diagonal_position = mut_position + &Vector::new(direction, 0);
 
     if grid.is_type(&above_position, Kind::Air) {
-        grid.swap_cells(position, &above_position);
-        return;
+        grid.swap_cells(mut_position, &above_position);
+        mut_position = &above_position;
+    } else {
+        if grid.is_type(&diagonal_position, Kind::Air) {
+            grid.swap_cells(mut_position, &diagonal_position);
+            mut_position = &diagonal_position;
+        }
     }
 
-    let direction = if fastrand::bool() { -1 } else { 1 };
-    let diag_position = position + &Vector::new(direction, 1);
+    burn_cell(grid, &(mut_position + &random_direction()), mut_position);
+}
 
-    if grid.is_type(&diag_position, Kind::Air) {
-        grid.swap_cells(position, &diag_position);
-        return;
+fn random_direction() -> Vector {
+    let x = fastrand::i32(-1..=1);
+    let y = fastrand::i32(-1..=1);
+    Vector::new(x, y)
+}
+
+fn burn_cell(grid: &mut Game, position: &Vector, fire_position: &Vector) {
+    let cell = grid.get_cell(position);
+    match cell.kind {
+        Kind::Water => {
+            if fastrand::u8(0..5) == 0 {
+                grid.set_cell(position, create_air());
+            }
+            grid.set_cell(fire_position, create_air());
+        }
+        Kind::Wood => {
+            if fastrand::u8(0..20) == 0 {
+                grid.set_cell(position, create_fire());
+            }
+            for _ in 0..3 {
+                let fire_position = position + &random_direction();
+                if grid.is_type(&fire_position, Kind::Air) {
+                    grid.set_cell(&fire_position, create_fire());
+                }
+            }
+        }
+        _ => {}
     }
 }
