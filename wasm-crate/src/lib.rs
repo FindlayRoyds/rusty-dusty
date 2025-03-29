@@ -56,7 +56,7 @@ impl Game {
         }
         let x = (position.x + self.grid_width) % self.grid_width;
         let y = (position.y + self.grid_height) % self.grid_height;
-        self.grid[y as usize][x as usize].clone()
+        return self.grid[y as usize][x as usize].clone();
     }
 
     fn set_cell(&mut self, position: &Vector, value: Cell) {

@@ -12,16 +12,19 @@
     [Kind.Air]: "Clear",
     [Kind.Sand]: "Sand",
     [Kind.Wall]: "Wall",
+    [Kind.Water]: "Water",
   };
   const kindColors = {
     [Kind.Air]: "#e55656",
     [Kind.Sand]: "#e6c88e",
     [Kind.Wall]: "#8b5a2b",
+    [Kind.Water]: "#4287f5",
   };
   const kindEmojis = {
     [Kind.Air]: "🚫",
     [Kind.Sand]: "🏖️",
     [Kind.Wall]: "🧱",
+    [Kind.Water]: "💧",
   };
 
   $: selected = kind === selectedKind;

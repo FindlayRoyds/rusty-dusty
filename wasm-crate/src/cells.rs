@@ -43,6 +43,7 @@ pub type Vector = Vector2D<i32>;
 pub struct Cell {
     pub kind: Kind,
     pub color: Color,
+    pub data: u8,
 }
 
 impl Cell {
@@ -50,6 +51,7 @@ impl Cell {
         Cell {
             kind,
             color: Color::new(0, 0, 0),
+            data: 0,
         }
     }
 }
@@ -60,6 +62,7 @@ pub enum Kind {
     Air,
     Wall,
     Sand,
+    Water,
 }
 
 impl Kind {
@@ -67,6 +70,7 @@ impl Kind {
         match self {
             Kind::Sand => create_sand(time.unwrap()),
             Kind::Air => create_air(),
+            Kind::Water => create_water(),
             _ => Cell::new(self.clone()),
         }
     }
@@ -74,6 +78,7 @@ impl Kind {
     pub fn update(&self, cell: &Cell, position: &Vector, grid: &mut Game) {
         match self {
             Kind::Sand => update_sand(cell, position, grid),
+            Kind::Water => update_water(cell, position, grid),
             _ => {}
         }
     }
@@ -103,7 +108,16 @@ fn create_sand(time: i32) -> Cell {
 fn update_sand(_: &Cell, position: &Vector, grid: &mut Game) {
     if fastrand::u8(0..15) > 0 {
         let below_position = position + &Vector::new(0, -1);
-        if grid.is_type(&below_position, Kind::Air) {
+        let should_sink = || -> bool {
+            if grid.is_type(&below_position, Kind::Air) {
+                return true;
+            }
+            if grid.is_type(&below_position, Kind::Water) {
+                return fastrand::bool();
+            }
+            false
+        };
+        if should_sink() {
             grid.swap_cells(position, &below_position);
             return;
         }
@@ -115,5 +129,35 @@ fn update_sand(_: &Cell, position: &Vector, grid: &mut Game) {
     if grid.is_type(&below_position, Kind::Air) && grid.is_type(&side_position, Kind::Air) {
         grid.swap_cells(position, &below_position);
         return;
+    }
+}
+
+// ---------- WATER
+
+fn create_water() -> Cell {
+    let mut cell = Cell::new(Kind::Water);
+    cell.color = Color::new(0, 100, fastrand::u8(220..=255));
+    cell.data = fastrand::u8(0..2);
+    return cell;
+}
+
+fn update_water(cell: &Cell, position: &Vector, grid: &mut Game) {
+    let mut new_cell = cell.clone();
+    new_cell.color.b = (new_cell.color.b - 220 + 1) % (255 - 220) + 220;
+
+    let below_position = position + &Vector::new(0, -1);
+    if grid.is_type(&below_position, Kind::Air) {
+        grid.swap_cells(position, &below_position);
+        return;
+    }
+
+    let direction = if cell.data == 0 { -1 } else { 1 };
+    let side_position = position + &Vector::new(direction, 0);
+    if grid.is_type(&side_position, Kind::Air) {
+        grid.swap_cells(position, &side_position);
+        return;
+    } else {
+        new_cell.data ^= 1;
+        grid.set_cell(position, new_cell);
     }
 }
