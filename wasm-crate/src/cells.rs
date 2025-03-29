@@ -63,6 +63,7 @@ pub enum Kind {
     Wall,
     Sand,
     Water,
+    Fire,
 }
 
 impl Kind {
@@ -71,6 +72,7 @@ impl Kind {
             Kind::Sand => create_sand(time.unwrap()),
             Kind::Air => create_air(),
             Kind::Water => create_water(),
+            Kind::Fire => create_fire(),
             _ => Cell::new(self.clone()),
         }
     }
@@ -79,6 +81,7 @@ impl Kind {
         match self {
             Kind::Sand => update_sand(cell, position, grid),
             Kind::Water => update_water(cell, position, grid),
+            Kind::Fire => update_fire(cell, position, grid),
             _ => {}
         }
     }
@@ -156,6 +159,7 @@ fn create_water() -> Cell {
 fn update_water(cell: &Cell, position: &Vector, grid: &mut Game) {
     let mut new_cell = cell.clone();
     new_cell.color.b = (new_cell.color.b - 220 + 1) % (255 - 220) + 220;
+    grid.set_cell(position, new_cell);
 
     let below_position = position + &Vector::new(0, -1);
     if grid.is_type(&below_position, Kind::Air) {
@@ -169,7 +173,60 @@ fn update_water(cell: &Cell, position: &Vector, grid: &mut Game) {
         grid.swap_cells(position, &side_position);
         return;
     } else {
+        let mut new_cell = cell.clone();
         new_cell.data ^= 1;
         grid.set_cell(position, new_cell);
+    }
+}
+
+// ---------- FIRE
+
+fn create_fire() -> Cell {
+    let mut cell = Cell::new(Kind::Fire);
+
+    let hue = fastrand::f64() * 20.0 + 5.0;
+    let saturation = 85.0 + fastrand::f64() * 15.0;
+    let lightness = 45.0 + fastrand::f64() * 25.0;
+    cell.color = Color::from_hsl(hue, saturation, lightness);
+
+    cell.data = fastrand::u8(60..100);
+    return cell;
+}
+
+fn update_fire(cell: &Cell, position: &Vector, grid: &mut Game) {
+    let mut new_cell = cell.clone();
+
+    let decay_rate = 1 + (fastrand::u8(0..5) < 4) as u8;
+    if new_cell.data > decay_rate {
+        new_cell.data -= decay_rate;
+    } else {
+        new_cell.data = 0;
+    }
+
+    if new_cell.data == 0 {
+        grid.set_cell(position, create_air());
+        return;
+    }
+
+    let lifespan_factor = new_cell.data as f64 / 100.0;
+    let hue = 5.0 + lifespan_factor * 20.0;
+    let saturation = 85.0 + lifespan_factor * 15.0;
+    let lightness = 50.0 + lifespan_factor * 20.0;
+    new_cell.color = Color::from_hsl(hue, saturation, lightness);
+    grid.set_cell(position, new_cell);
+
+    let above_position = position + &Vector::new(0, 1);
+
+    if grid.is_type(&above_position, Kind::Air) {
+        grid.swap_cells(position, &above_position);
+        return;
+    }
+
+    let direction = if fastrand::bool() { -1 } else { 1 };
+    let diag_position = position + &Vector::new(direction, 1);
+
+    if grid.is_type(&diag_position, Kind::Air) {
+        grid.swap_cells(position, &diag_position);
+        return;
     }
 }

@@ -8,27 +8,21 @@
     selectKind(kind);
   }
 
-  const kindNames = {
-    [Kind.Air]: "Clear",
-    [Kind.Sand]: "Sand",
-    [Kind.Wall]: "Wall",
-    [Kind.Water]: "Water",
-  };
-  const kindColors = {
-    [Kind.Air]: "#e55656",
-    [Kind.Sand]: "#e6c88e",
-    [Kind.Wall]: "#8b5a2b",
-    [Kind.Water]: "#4287f5",
-  };
-  const kindEmojis = {
-    [Kind.Air]: "🚫",
-    [Kind.Sand]: "🏖️",
-    [Kind.Wall]: "🧱",
-    [Kind.Water]: "💧",
+  const kindProperties = {
+    [Kind.Air]: { name: "Clear", color: "#e55656", emoji: "🚫" },
+    [Kind.Sand]: { name: "Sand", color: "#e6c88e", emoji: "🏖️" },
+    [Kind.Wall]: { name: "Wall", color: "#8b5a2b", emoji: "🧱" },
+    [Kind.Water]: { name: "Water", color: "#4287f5", emoji: "💧" },
+    [Kind.Fire]: { name: "Fire", color: "#FF6600", emoji: "🔥" },
   };
 
   $: selected = kind === selectedKind;
-  $: borderColor = selected ? kindColors[kind] : "#9a7856";
+  $: kindInfo = kindProperties[kind] || {
+    name: Kind[kind],
+    color: "#9a7856",
+    emoji: "❓",
+  };
+  $: borderColor = selected ? kindInfo.color : "#9a7856";
 </script>
 
 <button
@@ -37,10 +31,10 @@
   class:selected
 >
   <span class="emoji" class:selected>
-    {kindEmojis[kind]}
+    {kindInfo.emoji}
   </span>
   <span class="name">
-    {kindNames[kind]}
+    {kindInfo.name}
   </span>
 </button>
 
