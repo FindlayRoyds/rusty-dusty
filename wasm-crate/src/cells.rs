@@ -166,14 +166,22 @@ fn update_water(cell: &Cell, position: &Vector, grid: &mut Game) {
 
     let below_position = position + &Vector::new(0, -1);
     if grid.is_type(&below_position, Kind::Air) {
+        let mut new_cell = cell.clone();
+        new_cell.data ^= 1;
+        grid.set_cell(position, new_cell);
         grid.swap_cells(position, &below_position);
         return;
     }
 
     let direction = if cell.data == 0 { -1 } else { 1 };
     let side_position = position + &Vector::new(direction, 0);
-    if grid.is_type(&side_position, Kind::Air) {
+    if grid.is_type(&side_position, Kind::Air) || grid.is_type(&side_position, Kind::Water) {
         grid.swap_cells(position, &side_position);
+        let below_position = &side_position + &Vector::new(0, -1);
+        if grid.is_type(&below_position, Kind::Air) {
+            grid.swap_cells(&side_position, &below_position);
+            return;
+        }
         return;
     } else {
         let mut new_cell = cell.clone();
