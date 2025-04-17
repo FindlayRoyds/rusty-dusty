@@ -1,4 +1,5 @@
 # Rusty Dusty WASM App
+![Rusty Dusty Simulation](public/cover_image.png)
 
 Rusty Dusty is a Rust WASM web app that runs a simulation of different grid-bound particles.
 You can try it out at [dust.findlayroyds.com](http://dust.findlayroyds.com).
