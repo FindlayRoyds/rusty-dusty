@@ -87,8 +87,9 @@ impl Game {
         }
     }
 
-    fn is_type(&self, position: &Vector, kind: Kind) -> bool {
-        self.get_cell(position).kind == kind
+    fn is_type<const N: usize>(&self, position: &Vector, kinds: [Kind; N]) -> bool {
+        let cell_kind = self.get_cell(position).kind;
+        kinds.iter().any(|&kind| cell_kind == kind)
     }
 
     #[wasm_bindgen]
@@ -133,7 +134,7 @@ impl Game {
                     continue;
                 }
                 let position = Vector::new(cell_x, self.grid_height - cell_y - 1);
-                if !self.is_type(&position, Kind::Air) && kind != Kind::Air {
+                if !self.is_type(&position, [Kind::Air]) && kind != Kind::Air {
                     continue;
                 }
 
