@@ -118,10 +118,10 @@ fn update_sand(_: &Cell, position: &Vector, grid: &mut Game) {
     if fastrand::u8(0..15) > 0 {
         let below_position = position + &Vector::new(0, -1);
         let should_fall = || -> bool {
-            if grid.is_type(&below_position, Kind::Air) {
+            if grid.is_type(&below_position, [Kind::Air]) {
                 return true;
             }
-            if grid.is_type(&below_position, Kind::Water) {
+            if grid.is_type(&below_position, [Kind::Water]) {
                 return fastrand::bool();
             }
             false
@@ -136,12 +136,11 @@ fn update_sand(_: &Cell, position: &Vector, grid: &mut Game) {
     let side_position = position + &Vector::new(direction, 0);
     let below_position = position + &Vector::new(direction, -1);
     let should_move = || -> bool {
-        if grid.is_type(&below_position, Kind::Air) && grid.is_type(&side_position, Kind::Air) {
+        if grid.is_type(&below_position, [Kind::Air]) && grid.is_type(&side_position, [Kind::Air]) {
             return true;
         }
-        if grid.is_type(&below_position, Kind::Water)
-            || grid.is_type(&below_position, Kind::Air) && grid.is_type(&side_position, Kind::Water)
-            || grid.is_type(&below_position, Kind::Water)
+        if grid.is_type(&below_position, [Kind::Water, Kind::Air])
+            && grid.is_type(&side_position, [Kind::Water, Kind::Air])
         {
             return fastrand::bool();
         }
@@ -168,7 +167,7 @@ fn update_water(cell: &Cell, position: &Vector, grid: &mut Game) {
     grid.set_cell(position, new_cell);
 
     let below_position = position + &Vector::new(0, -1);
-    if grid.is_type(&below_position, Kind::Air) || grid.is_type(&below_position, Kind::Steam) {
+    if grid.is_type(&below_position, [Kind::Air, Kind::Steam]) {
         let mut new_cell = cell.clone();
         new_cell.data ^= 1;
         grid.set_cell(position, new_cell);
@@ -178,10 +177,10 @@ fn update_water(cell: &Cell, position: &Vector, grid: &mut Game) {
 
     let direction = if cell.data == 0 { -1 } else { 1 };
     let side_position = position + &Vector::new(direction, 0);
-    if grid.is_type(&side_position, Kind::Air) || grid.is_type(&side_position, Kind::Water) {
+    if grid.is_type(&side_position, [Kind::Air, Kind::Water]) {
         grid.swap_cells(position, &side_position);
         let below_position = &side_position + &Vector::new(0, -1);
-        if grid.is_type(&below_position, Kind::Air) {
+        if grid.is_type(&below_position, [Kind::Air]) {
             grid.swap_cells(&side_position, &below_position);
             return;
         }
@@ -243,11 +242,11 @@ fn update_fire(cell: &Cell, position: &Vector, grid: &mut Game) {
     let direction = if fastrand::bool() { -1 } else { 1 };
     let diagonal_position = mut_position + &Vector::new(direction, 0);
 
-    if grid.is_type(&above_position, Kind::Air) {
+    if grid.is_type(&above_position, [Kind::Air]) {
         grid.swap_cells(mut_position, &above_position);
         mut_position = &above_position;
     } else {
-        if grid.is_type(&diagonal_position, Kind::Air) {
+        if grid.is_type(&diagonal_position, [Kind::Air]) {
             grid.swap_cells(mut_position, &diagonal_position);
             mut_position = &diagonal_position;
         }
@@ -277,10 +276,13 @@ fn burn_cell(grid: &mut Game, position: &Vector, fire_position: &Vector) {
             }
             for _ in 0..3 {
                 let fire_position = position + &random_direction();
-                if grid.is_type(&fire_position, Kind::Air) {
+                if grid.is_type(&fire_position, [Kind::Air]) {
                     grid.set_cell(&fire_position, create_fire());
                 }
             }
+        }
+        Kind::Steam => {
+            grid.set_cell(position, create_steam());
         }
         _ => {}
     }
@@ -322,24 +324,24 @@ fn update_steam(cell: &Cell, position: &Vector, grid: &mut Game) {
     let above_position = position + &Vector::new(0, 1);
     let below_position = position + &Vector::new(0, -1);
 
-    if (grid.is_type(&above_position, Kind::Steam) || grid.is_type(&above_position, Kind::Wall))
-        && grid.is_type(&below_position, Kind::Air)
+    if (grid.is_type(&above_position, [Kind::Steam, Kind::Wall]))
+        && grid.is_type(&below_position, [Kind::Air])
     {
         grid.swap_cells(position, &below_position);
         return;
     }
 
-    if fastrand::u8(0..10) < 8 && grid.is_type(&above_position, Kind::Air) {
+    if fastrand::u8(0..10) < 8 && grid.is_type(&above_position, [Kind::Air, Kind::Fire]) {
         grid.swap_cells(position, &above_position);
     } else {
         let direction = if fastrand::bool() { -1 } else { 1 };
         let side_position = position + &Vector::new(direction, 0);
 
-        if grid.is_type(&side_position, Kind::Air) {
+        if grid.is_type(&side_position, [Kind::Air]) {
             grid.swap_cells(position, &side_position);
         } else {
             let diagonal_up = position + &Vector::new(direction, 1);
-            if grid.is_type(&diagonal_up, Kind::Air) {
+            if grid.is_type(&diagonal_up, [Kind::Air]) {
                 grid.swap_cells(position, &diagonal_up);
             }
         }
