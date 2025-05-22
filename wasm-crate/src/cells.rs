@@ -65,6 +65,7 @@ pub enum Kind {
     Water,
     Fire,
     Wood,
+    Steam,
 }
 
 impl Kind {
@@ -75,6 +76,7 @@ impl Kind {
             Kind::Water => create_water(),
             Kind::Fire => create_fire(),
             Kind::Wood => create_wood(),
+            Kind::Steam => create_steam(),
             _ => Cell::new(self.clone()),
         }
     }
@@ -85,6 +87,7 @@ impl Kind {
             Kind::Water => update_water(cell, position, grid),
             Kind::Fire => update_fire(cell, position, grid),
             Kind::Wood => {}
+            Kind::Steam => update_steam(cell, position, grid),
             _ => {}
         }
     }
@@ -165,7 +168,7 @@ fn update_water(cell: &Cell, position: &Vector, grid: &mut Game) {
     grid.set_cell(position, new_cell);
 
     let below_position = position + &Vector::new(0, -1);
-    if grid.is_type(&below_position, Kind::Air) {
+    if grid.is_type(&below_position, Kind::Air) || grid.is_type(&below_position, Kind::Steam) {
         let mut new_cell = cell.clone();
         new_cell.data ^= 1;
         grid.set_cell(position, new_cell);
@@ -264,7 +267,7 @@ fn burn_cell(grid: &mut Game, position: &Vector, fire_position: &Vector) {
     match cell.kind {
         Kind::Water => {
             if fastrand::u8(0..5) == 0 {
-                grid.set_cell(position, create_air());
+                grid.set_cell(position, create_steam());
             }
             grid.set_cell(fire_position, create_air());
         }
@@ -280,5 +283,65 @@ fn burn_cell(grid: &mut Game, position: &Vector, fire_position: &Vector) {
             }
         }
         _ => {}
+    }
+}
+
+// ---------- STEAM
+
+fn create_steam() -> Cell {
+    let mut cell = Cell::new(Kind::Steam);
+
+    let hue = 195.0 + fastrand::f64() * 10.0;
+    let saturation = 10.0 + fastrand::f64() * 15.0;
+    let lightness = 75.0 + fastrand::f64() * 15.0;
+    cell.color = Color::from_hsl(hue, saturation, lightness);
+
+    cell.data = fastrand::u8(60..100);
+    return cell;
+}
+
+fn update_steam(cell: &Cell, position: &Vector, grid: &mut Game) {
+    let mut new_cell = cell.clone();
+    let position = &position.clone();
+
+    let decay_rate = if fastrand::u8(0..20) == 0 { 1 } else { 0 };
+    if new_cell.data > decay_rate {
+        new_cell.data -= decay_rate;
+    } else {
+        grid.set_cell(position, create_water());
+        return;
+    }
+
+    let lifespan_factor = new_cell.data as f64 / 100.0;
+    let hue = 195.0 + lifespan_factor * 10.0;
+    let saturation = 10.0 + (1.0 - lifespan_factor) * 15.0;
+    let lightness = 75.0 + lifespan_factor * 15.0;
+    new_cell.color = Color::from_hsl(hue, saturation, lightness);
+    grid.set_cell(position, new_cell);
+
+    let above_position = position + &Vector::new(0, 1);
+    let below_position = position + &Vector::new(0, -1);
+
+    if (grid.is_type(&above_position, Kind::Steam) || grid.is_type(&above_position, Kind::Wall))
+        && grid.is_type(&below_position, Kind::Air)
+    {
+        grid.swap_cells(position, &below_position);
+        return;
+    }
+
+    if fastrand::u8(0..10) < 8 && grid.is_type(&above_position, Kind::Air) {
+        grid.swap_cells(position, &above_position);
+    } else {
+        let direction = if fastrand::bool() { -1 } else { 1 };
+        let side_position = position + &Vector::new(direction, 0);
+
+        if grid.is_type(&side_position, Kind::Air) {
+            grid.swap_cells(position, &side_position);
+        } else {
+            let diagonal_up = position + &Vector::new(direction, 1);
+            if grid.is_type(&diagonal_up, Kind::Air) {
+                grid.swap_cells(position, &diagonal_up);
+            }
+        }
     }
 }

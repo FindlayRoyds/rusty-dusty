@@ -15,6 +15,7 @@
     [Kind.Water]: { name: "Water", color: "#4287f5", emoji: "💧" },
     [Kind.Fire]: { name: "Fire", color: "#FF6600", emoji: "🔥" },
     [Kind.Wood]: { name: "Wood", color: "#502b0f", emoji: "🪵" },
+    [Kind.Steam]: { name: "Steam", color: "#b3d1ff", emoji: "☁️" },
   };
 
   $: selected = kind === selectedKind;
